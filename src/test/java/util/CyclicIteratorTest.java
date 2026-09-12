@@ -2,6 +2,7 @@ package util;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -9,30 +10,39 @@ import static org.junit.jupiter.api.Assertions.*;
 class CyclicIteratorTest {
 
     @Test
-    void cyclesThroughItemsRepeatedly() {
-        CyclicIterator<String> iterator = new CyclicIterator<>(List.of("R", "G", "Y"));
+    void iteratorCyclesInStableOrder() {
+        CyclicIterator<String> iterator = new CyclicIterator<>(
+                List.of("A", "B", "C"));
 
-        assertEquals("R", iterator.next());
-        assertEquals("G", iterator.next());
-        assertEquals("Y", iterator.next());
-        assertEquals("R", iterator.next());
+        assertEquals("A", iterator.next());
+        assertEquals("B", iterator.next());
+        assertEquals("C", iterator.next());
+        assertEquals("A", iterator.next());
     }
 
     @Test
-    void currentAndSetIndexWorkWithoutAdvancing() {
-        CyclicIterator<String> iterator = new CyclicIterator<>(List.of("R", "G", "Y"));
+    void iteratorCopiesInputAndSupportsIndexControl() {
+        List<String> input = new ArrayList<>(List.of("A", "B"));
+        CyclicIterator<String> iterator = new CyclicIterator<>(input);
+        input.clear();
 
-        iterator.setIndex(2);
-
-        assertEquals("Y", iterator.current());
-        assertEquals(2, iterator.getCurrentIndex());
-        assertEquals(3, iterator.size());
+        iterator.setIndex(1);
+        assertEquals("B", iterator.current());
+        iterator.reset();
+        assertEquals("A", iterator.current());
+        assertEquals(2, iterator.size());
+        assertTrue(iterator.hasNext());
     }
 
     @Test
-    void rejectsEmptyOrInvalidIndex() {
-        assertThrows(IllegalArgumentException.class, () -> new CyclicIterator<>(List.of()));
-        CyclicIterator<String> iterator = new CyclicIterator<>(List.of("R"));
+    void iteratorRejectsMissingItemsAndInvalidIndex() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new CyclicIterator<>(List.of()));
+        assertThrows(IllegalArgumentException.class,
+                () -> new CyclicIterator<>(null));
+
+        CyclicIterator<String> iterator = new CyclicIterator<>(List.of("A"));
+        assertThrows(IllegalArgumentException.class, () -> iterator.setIndex(-1));
         assertThrows(IllegalArgumentException.class, () -> iterator.setIndex(1));
     }
 }

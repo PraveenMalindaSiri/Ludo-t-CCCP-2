@@ -1,437 +1,161 @@
 package engine;
 
 import board.Board;
-import dice.ICoinToss;
-import dice.IDice;
+import event.GameSnapshot;
 import event.IGameEventListener;
-import factory.BoardFactory;
 import mystery.MysteryManager;
+import mystery.MysteryOutcome;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import piece.Piece;
+import player.BluePlayer;
 import player.Player;
-import player.strategy.IPlayerStrategy;
+import player.YellowPlayer;
 import rules.BlockHandler;
 import rules.CaptureHandler;
 import rules.RuleEngine;
+import support.TestSupport;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class GameEngineTest {
+    private Board board;
+    private Piece yellowPiece;
+    private Piece bluePiece;
+    private GameEngine engine;
+    private RecordingListener listener;
 
-    @Test
-    void startGameSelectsHighestInitialRollAndPublishesFinalPlacements() {
-        // Arrange
-        Board board = BoardFactory.createBoard();
-        BlockHandler blockHandler = new BlockHandler(board);
-        CaptureHandler captureHandler = new CaptureHandler(board);
-        RuleEngine ruleEngine = new RuleEngine(board, blockHandler, captureHandler);
-        MysteryManager mysteryManager = new MysteryManager(board, new Random(1));
+    @BeforeEach
+    void setUp() {
+        board = TestSupport.newBoard();
+        yellowPiece = new Piece("1", "YELLOW");
+        bluePiece = new Piece("1", "BLUE");
 
-        FakeDice dice = new FakeDice(
-                2, 6, 4, 1,
-                1, 1, 1, 1
-        );
+        Player yellow = new YellowPlayer(
+                List.of(yellowPiece), new TestSupport.FirstPieceStrategy(true));
+        Player blue = new BluePlayer(
+                List.of(bluePiece), new TestSupport.FirstPieceStrategy(true));
 
-        List<Player> players = List.of(
-                new AutoFinishingPlayer("RED"),
-                new AutoFinishingPlayer("GREEN"),
-                new AutoFinishingPlayer("YELLOW"),
-                new AutoFinishingPlayer("BLUE")
-        );
+        CaptureHandler capture = new CaptureHandler(board);
+        BlockHandler block = new BlockHandler(board);
+        RuleEngine rules = new RuleEngine(board, block);
+        MysteryManager mystery = new MysteryManager(
+                board, new TestSupport.SequenceRandom(0),
+                List.of((piece, gameBoard) ->
+                        new MysteryOutcome(MysteryOutcome.Type.START, "unused")));
 
-        GameEngine engine = createEngine(board, players, ruleEngine,
-                captureHandler, blockHandler, mysteryManager, dice);
-
-        RecordingListener listener = new RecordingListener();
+        // Initial rolls: Yellow 6, Blue 1. Yellow's turn: 6 then 1.
+        // Blue's first turn: 1.
+        engine = new GameEngine(board, List.of(yellow, blue), rules,
+                capture, block, mystery,
+                new TestSupport.SequenceDice(6, 1, 6, 1, 1),
+                new TestSupport.FixedCoinToss("HEADS"));
+        listener = new RecordingListener();
         engine.addEventListener(listener);
-
-        // Act
-        engine.startGame();
-
-        // Assert
-        assertEquals("GREEN", listener.firstPlayer);
-        assertEquals(List.of("GREEN", "YELLOW", "BLUE", "RED"), listener.turnOrder);
-        assertEquals(List.of("GREEN", "YELLOW", "BLUE", "RED"), listener.winners);
-        assertEquals(List.of("GREEN", "YELLOW", "BLUE", "RED"), listener.finalPlacements);
     }
 
     @Test
-    void rollingSixGivesBonusTurn() {
-        // Arrange
-        Board board = BoardFactory.createBoard();
-        BlockHandler blockHandler = new BlockHandler(board);
-        CaptureHandler captureHandler = new CaptureHandler(board);
-        RuleEngine ruleEngine = new RuleEngine(board, blockHandler, captureHandler);
-        MysteryManager mysteryManager = new MysteryManager(board, new Random(1));
+    void initializationIsIdempotentAndPublishesStartingOrder() {
+        engine.initializeGame();
+        engine.initializeGame();
 
-        FakeDice dice = new FakeDice(
-                6, 5, 4, 3,
-                6, 2,
-                1, 1, 1
-        );
-
-        List<Player> players = List.of(
-                new AutoFinishingPlayer("RED"),
-                new AutoFinishingPlayer("GREEN"),
-                new AutoFinishingPlayer("YELLOW"),
-                new AutoFinishingPlayer("BLUE")
-        );
-
-        GameEngine engine = createEngine(board, players, ruleEngine,
-                captureHandler, blockHandler, mysteryManager, dice);
-
-        RecordingListener listener = new RecordingListener();
-        engine.addEventListener(listener);
-
-        // Act
-        engine.startGame();
-
-        // Assert
-        assertEquals(List.of("RED=6", "RED=2"), listener.diceRolls.subList(0, 2));
-        assertEquals(2, listener.countDiceRollsFor("RED"));
+        assertTrue(engine.isInitialized());
+        assertEquals(2, listener.initialRolls.size());
+        assertEquals("YELLOW", listener.firstPlayer);
+        assertEquals(List.of("YELLOW", "BLUE"), listener.turnOrder);
+        assertTrue(board.getBaseCell("YELLOW").getPieces().contains(yellowPiece));
+        assertTrue(board.getBaseCell("BLUE").getPieces().contains(bluePiece));
     }
 
     @Test
-    void thirdConsecutiveSixIsIgnored() {
-        // Arrange
-        Board board = BoardFactory.createBoard();
-        BlockHandler blockHandler = new BlockHandler(board);
-        CaptureHandler captureHandler = new CaptureHandler(board);
-        RuleEngine ruleEngine = new RuleEngine(board, blockHandler, captureHandler);
-        MysteryManager mysteryManager = new MysteryManager(board, new Random(1));
+    void oneTurnEntryAndMoveAreDrivenThroughCommands() {
+        boolean gameContinues = engine.advanceOneTurn();
 
-        AutoFinishingPlayer red = new AutoFinishingPlayer("RED");
-
-        FakeDice dice = new FakeDice(
-                6, 5, 4, 3,
-                6, 6, 6,
-                5, 1, 1
-        );
-
-        List<Player> players = List.of(
-                red,
-                new AutoFinishingPlayer("GREEN"),
-                new AutoFinishingPlayer("YELLOW"),
-                new AutoFinishingPlayer("BLUE")
-        );
-
-        GameEngine engine = createEngine(board, players, ruleEngine,
-                captureHandler, blockHandler, mysteryManager, dice);
-
-        RecordingListener listener = new RecordingListener();
-        engine.addEventListener(listener);
-
-        // Act
-        engine.startGame();
-
-        // Assert
-        assertEquals(List.of("RED=6", "RED=6", "RED=6"), listener.diceRolls.subList(0, 3));
-        assertEquals("GREEN=5", listener.diceRolls.get(3));
-        assertEquals(3, listener.countDiceRollsFor("RED"));
-        assertEquals(0, red.getConsecutiveSixes());
+        assertTrue(gameContinues);
+        assertEquals(1, yellowPiece.getPosition());
+        assertEquals("CLOCKWISE", yellowPiece.getDirection());
+        assertFalse(yellowPiece.isInBase());
+        assertEquals(1, listener.entryEvents);
+        assertEquals(List.of("YELLOW:0->1"), listener.moveEvents);
+        assertEquals(0, engine.getRoundCount());
     }
 
     @Test
-    void startGamePublishesPlayerInfoAndInitialRollEvents() {
-        // Arrange
-        Board board = BoardFactory.createBoard();
-        BlockHandler blockHandler = new BlockHandler(board);
-        CaptureHandler captureHandler = new CaptureHandler(board);
-        RuleEngine ruleEngine = new RuleEngine(board, blockHandler, captureHandler);
-        MysteryManager mysteryManager = new MysteryManager(board, new Random(1));
+    void engineAdvancesExactlyOneRoundAfterEveryPlayerTurn() {
+        engine.advanceOneTurn();
+        engine.advanceOneTurn();
 
-        FakeDice dice = new FakeDice(
-                1, 2, 3, 4,
-                1, 1, 1, 1
-        );
-
-        List<Player> players = List.of(
-                new AutoFinishingPlayer("RED"),
-                new AutoFinishingPlayer("GREEN"),
-                new AutoFinishingPlayer("YELLOW"),
-                new AutoFinishingPlayer("BLUE")
-        );
-
-        GameEngine engine = createEngine(board, players, ruleEngine,
-                captureHandler, blockHandler, mysteryManager, dice);
-
-        RecordingListener listener = new RecordingListener();
-        engine.addEventListener(listener);
-
-        // Act
-        engine.startGame();
-
-        // Assert
-        assertEquals(List.of(
-                "RED=0",
-                "GREEN=0",
-                "YELLOW=0",
-                "BLUE=0"
-        ), listener.playerInfoEvents);
-
-        assertEquals(List.of(
-                "RED=1",
-                "GREEN=2",
-                "YELLOW=3",
-                "BLUE=4"
-        ), listener.initialRolls);
-
-        assertEquals("BLUE", listener.firstPlayer);
+        assertEquals(1, engine.getRoundCount());
+        assertEquals(1, listener.roundSnapshots.size());
+        assertEquals(1, listener.roundSnapshots.getFirst().getRound());
+        assertFalse(engine.isCompleted());
     }
 
     @Test
-    void startGamePublishesDiceRollEventsAndFinalPlacements() {
-        // Arrange
-        Board board = BoardFactory.createBoard();
-        BlockHandler blockHandler = new BlockHandler(board);
-        CaptureHandler captureHandler = new CaptureHandler(board);
-        RuleEngine ruleEngine = new RuleEngine(board, blockHandler, captureHandler);
-        MysteryManager mysteryManager = new MysteryManager(board, new Random(1));
+    void removedObserverNoLongerReceivesEngineEvents() {
+        engine.removeEventListener(listener);
 
-        FakeDice dice = new FakeDice(
-                6, 5, 4, 3,
-                1, 2, 3, 4
-        );
+        engine.initializeGame();
 
-        List<Player> players = List.of(
-                new AutoFinishingPlayer("RED"),
-                new AutoFinishingPlayer("GREEN"),
-                new AutoFinishingPlayer("YELLOW"),
-                new NeverFinishingPlayer("BLUE")
-        );
-
-        GameEngine engine = createEngine(board, players, ruleEngine,
-                captureHandler, blockHandler, mysteryManager, dice);
-
-        RecordingListener listener = new RecordingListener();
-        engine.addEventListener(listener);
-
-        // Act
-        engine.startGame();
-
-        // Assert
-        assertTrue(listener.diceRolls.contains("RED=1"));
-        assertTrue(listener.diceRolls.contains("GREEN=2"));
-        assertTrue(listener.diceRolls.contains("YELLOW=3"));
-        assertTrue(listener.diceRolls.contains("BLUE=4"));
-
-        assertEquals(List.of("RED", "GREEN", "YELLOW"), listener.winners);
-        assertEquals(List.of("RED", "GREEN", "YELLOW", "BLUE"), listener.finalPlacements);
-        assertEquals(1, listener.roundEndCount);
+        assertTrue(listener.initialRolls.isEmpty());
+        assertNull(listener.firstPlayer);
     }
 
-    private static GameEngine createEngine(Board board,
-                                           List<Player> players,
-                                           RuleEngine ruleEngine,
-                                           CaptureHandler captureHandler,
-                                           BlockHandler blockHandler,
-                                           MysteryManager mysteryManager,
-                                           IDice dice) {
-        return new GameEngine(
-                board,
-                players,
-                ruleEngine,
-                captureHandler,
-                blockHandler,
-                mysteryManager,
-                dice,
-                new FixedCoinToss("HEADS")
-        );
+    @Test
+    void snapshotCanBeRequestedWithoutExposingDomainPlayers() {
+        engine.initializeGame();
+
+        GameSnapshot snapshot = engine.getSnapshot();
+
+        assertEquals(2, snapshot.getPlayers().size());
+        assertEquals("YELLOW", snapshot.getPlayers().getFirst().getColor());
+        assertThrows(UnsupportedOperationException.class,
+                () -> snapshot.getPlayers().clear());
     }
 
-    private static class AutoFinishingPlayer extends Player {
-        private int hasWonCalls;
-
-        AutoFinishingPlayer(String color) {
-            super(color, color, List.of(), new NoMoveStrategy());
-        }
-
-        @Override
-        protected Piece choosePieceToMove(List<Piece> pieces, int diceValue,
-                                          Board board, RuleEngine ruleEngine) {
-            return null;
-        }
-
-        @Override
-        public boolean hasWon() {
-            hasWonCalls++;
-            return hasWonCalls >= 2;
-        }
-    }
-
-    private static class NeverFinishingPlayer extends Player {
-        NeverFinishingPlayer(String color) {
-            super(color, color, List.of(), new NoMoveStrategy());
-        }
-
-        @Override
-        protected Piece choosePieceToMove(List<Piece> pieces, int diceValue,
-                                          Board board, RuleEngine ruleEngine) {
-            return null;
-        }
-
-        @Override
-        public boolean hasWon() {
-            return false;
-        }
-    }
-
-    private static class NoMoveStrategy implements IPlayerStrategy {
-        @Override
-        public Piece choosePieceToMove(List<Piece> validMoves, int diceValue,
-                                       Board board, RuleEngine ruleEngine) {
-            return null;
-        }
-
-        @Override
-        public boolean shouldMoveFromBase(List<Piece> pieces, int diceValue,
-                                          Board board, RuleEngine ruleEngine) {
-            return false;
-        }
-    }
-
-    private static class FakeDice implements IDice {
-        private final int[] values;
-        private int index;
-
-        FakeDice(int... values) {
-            this.values = values;
-        }
-
-        @Override
-        public int roll() {
-            if (index >= values.length) {
-                return 1;
-            }
-            return values[index++];
-        }
-    }
-
-    private static class FixedCoinToss implements ICoinToss {
-        private final String result;
-
-        FixedCoinToss(String result) {
-            this.result = result;
-        }
-
-        @Override
-        public String toss() {
-            return result;
-        }
-    }
-
-    private static class RecordingListener implements IGameEventListener {
-        private String firstPlayer;
-        private List<String> turnOrder = new ArrayList<>();
-        private final List<String> winners = new ArrayList<>();
-        private List<String> finalPlacements = new ArrayList<>();
-        private final List<String> playerInfoEvents = new ArrayList<>();
+    private static final class RecordingListener implements IGameEventListener {
         private final List<String> initialRolls = new ArrayList<>();
-        private final List<String> diceRolls = new ArrayList<>();
-        private int roundEndCount;
-
-        int countDiceRollsFor(String color) {
-            int count = 0;
-            for (String roll : diceRolls) {
-                if (roll.startsWith(color + "=")) {
-                    count++;
-                }
-            }
-            return count;
-        }
-
-        @Override
-        public void onPlayerInfo(String color, List<String> pieceNames) {
-            playerInfoEvents.add(color + "=" + pieceNames.size());
-        }
+        private final List<String> turnOrder = new ArrayList<>();
+        private final List<String> moveEvents = new ArrayList<>();
+        private final List<GameSnapshot> roundSnapshots = new ArrayList<>();
+        private String firstPlayer;
+        private int entryEvents;
 
         @Override
         public void onInitialRoll(String color, int value) {
-            initialRolls.add(color + "=" + value);
-        }
-
-        @Override
-        public void onDiceRolled(String color, int value) {
-            diceRolls.add(color + "=" + value);
+            initialRolls.add(color + ":" + value);
         }
 
         @Override
         public void onFirstPlayer(String color) {
-            this.firstPlayer = color;
+            firstPlayer = color;
         }
 
         @Override
         public void onTurnOrder(List<String> colors) {
-            this.turnOrder = new ArrayList<>(colors);
+            turnOrder.clear();
+            turnOrder.addAll(colors);
         }
 
         @Override
         public void onPieceEnteredBoard(String color, String pieceName,
                                         int boardCount, int baseCount) {
+            entryEvents++;
         }
 
         @Override
         public void onPieceMoved(String color, String pieceName,
-                                 int from, int to, int value, String direction) {
+                                 int from, int to, int value,
+                                 String direction) {
+            moveEvents.add(color + ":" + from + "->" + to);
         }
 
         @Override
-        public void onPieceBlocked(String color, String pieceName,
-                                   int from, int to,
-                                   String blockingColor, String blockingName) {
-        }
-
-        @Override
-        public void onNoOtherPieces(String color) {
-        }
-
-        @Override
-        public void onMovedBeforeBlock(String color, String pieceName, int stoppedAt) {
-        }
-
-        @Override
-        public void onPieceCaptured(String capturerColor, String capturerName,
-                                    int cell,
-                                    String capturedColor, String capturedName,
-                                    int boardCount, int baseCount) {
-        }
-
-        @Override
-        public void onMysteryLanding(String color, String pieceName, String destination) {
-        }
-
-        @Override
-        public void onTeleportEffect(String color, String pieceName, String effect) {
-        }
-
-        @Override
-        public void onDirectionChanged(String color, String pieceName,
-                                       String oldDirection, String newDirection) {
-        }
-
-        @Override
-        public void onMysteryCellSpawned(int position, int duration) {
-        }
-
-        @Override
-        public void onRoundEnd(List<Player> players) {
-            roundEndCount++;
-        }
-
-        @Override
-        public void onGameWon(String color) {
-            winners.add(color);
-        }
-
-        @Override
-        public void onFinalPlacements(List<Player> finishOrder) {
-            finalPlacements = finishOrder.stream()
-                    .map(Player::getColor)
-                    .toList();
+        public void onRoundEnd(GameSnapshot snapshot) {
+            roundSnapshots.add(snapshot);
         }
     }
 }

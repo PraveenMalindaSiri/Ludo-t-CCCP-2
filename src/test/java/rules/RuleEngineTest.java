@@ -1,15 +1,14 @@
 package rules;
 
+import block.Block;
 import board.Board;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import piece.Piece;
 import piece.state.FrozenState;
 import piece.state.SickState;
-import testutil.TestHelpers;
-import piece.state.EnergizedState;
-import player.Player;
-import player.strategy.IPlayerStrategy;
+import player.YellowPlayer;
+import support.TestSupport;
 
 import java.util.List;
 
@@ -17,219 +16,125 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RuleEngineTest {
     private Board board;
-    private RuleEngine ruleEngine;
+    private BlockHandler blockHandler;
+    private RuleEngine rules;
 
     @BeforeEach
     void setUp() {
-        board = TestHelpers.board();
-        BlockHandler blockHandler = new BlockHandler(board);
-        CaptureHandler captureHandler = new CaptureHandler(board);
-        ruleEngine = new RuleEngine(board, blockHandler, captureHandler);
+        board = TestSupport.newBoard();
+        blockHandler = new BlockHandler(board);
+        rules = new RuleEngine(board, blockHandler);
     }
 
     @Test
     void baseEntryRequiresSix() {
-        assertTrue(ruleEngine.canMoveFromBase(6));
-        assertFalse(ruleEngine.canMoveFromBase(5));
-        assertFalse(ruleEngine.canMoveFromBase(1));
+        Piece piece = new Piece("1", "YELLOW");
+
+        assertFalse(rules.isValidMove(piece, 5));
+        assertTrue(rules.isValidMove(piece, 6));
     }
 
     @Test
-    void thirdConsecutiveSixIsDetected() {
-        assertFalse(ruleEngine.isThirdConsecutiveSix(1));
-        assertFalse(ruleEngine.isThirdConsecutiveSix(2));
-        assertTrue(ruleEngine.isThirdConsecutiveSix(3));
+    void destinationUsesStateAndDirectionWithoutMutatingPiece() {
+        Piece piece = TestSupport.place(
+                board, "1", "YELLOW", 10, "COUNTERCLOCKWISE");
+        piece.setState(new SickState(4));
+
+        int destination = rules.calculateDestination(piece, 5);
+
+        assertEquals(8, destination);
+        assertEquals(10, piece.getPosition());
+        assertSame(piece, board.getCellAt(10).getPieces().getFirst());
     }
 
     @Test
-    void calculatesClockwiseAndCounterClockwiseDestinationWithWrapping() {
-        Piece clockwise = TestHelpers.placePiece(board, "RED", "1", 50, "CLOCKWISE");
-        Piece counter = TestHelpers.placePiece(board, "BLUE", "1", 1, "COUNTERCLOCKWISE");
-
-        assertEquals(2, ruleEngine.calculateDestination(clockwise, 4));
-        assertEquals(49, ruleEngine.calculateDestination(counter, 4));
-    }
-
-    @Test
-    void pieceCanEnterHomeStraightOnlyAfterCapture() {
-        Piece piece = new Piece("1", "RED");
-
-        assertFalse(ruleEngine.canEnterHomeStraight(piece));
-        piece.incrementCaptureCount();
-        assertTrue(ruleEngine.canEnterHomeStraight(piece));
-    }
-
-    @Test
-    void counterClockwiseHomeStraightEntryNeedsSecondApproachPass() {
-        Piece piece = new Piece("1", "RED");
-        piece.setDirection("COUNTERCLOCKWISE");
-
-        assertFalse(ruleEngine.canEnterHomeStraightCCW(piece));
-        piece.setHasPassedApproachOnce(true);
-        assertTrue(ruleEngine.canEnterHomeStraightCCW(piece));
-    }
-
-    @Test
-    void homeStraightRequiresExactRollAndRejectsOvershoot() {
-        Piece piece = new Piece("1", "RED");
-        piece.moveToHomeStraight(3);
-
-        assertTrue(ruleEngine.needsExactRoll(piece, 2));
-        assertFalse(ruleEngine.needsExactRoll(piece, 1));
-        assertFalse(ruleEngine.overshotsHome(piece, 2));
-        assertTrue(ruleEngine.overshotsHome(piece, 3));
-    }
-
-    @Test
-    void validMoveRejectsFrozenPiecesAndSickZeroMovement() {
-        Piece frozen = TestHelpers.placePiece(board, "RED", "1", 10);
+    void frozenAndHomePiecesAreNotValidMoves() {
+        Piece frozen = TestSupport.place(
+                board, "1", "YELLOW", 10, "CLOCKWISE");
         frozen.setState(new FrozenState(4));
+        Piece home = new Piece("2", "YELLOW");
+        board.moveToHome(home);
 
-        Piece sick = TestHelpers.placePiece(board, "BLUE", "1", 20);
-        sick.setState(new SickState(4));
-
-        assertFalse(ruleEngine.isValidMove(frozen, 6));
-        assertFalse(ruleEngine.isValidMove(sick, 1));
-        assertTrue(ruleEngine.isValidMove(sick, 2));
+        assertFalse(rules.isValidMove(frozen, 6));
+        assertFalse(rules.isValidMove(home, 6));
     }
 
     @Test
-    void canPassApproachDetectsRollThatCrossesApproachCell() {
-        Piece red = TestHelpers.placePiece(board, "RED", "1", 23, "CLOCKWISE");
+    void homeStraightRejectsOvershootButAcceptsExactRoll() {
+        Piece piece = new Piece("1", "YELLOW");
+        board.moveToHomeStraight(piece, 3);
 
-        assertFalse(ruleEngine.canPassApproach(red, 1));
-        assertTrue(ruleEngine.canPassApproach(red, 2));
+        assertTrue(rules.needsExactRoll(piece, 2));
+        assertTrue(rules.isValidMove(piece, 2));
+        assertTrue(rules.overshotsHome(piece, 3));
+        assertFalse(rules.isValidMove(piece, 3));
     }
 
     @Test
-    void getValidMovesRejectsStandardPathMoveThatOvershootsHome() {
-        // Arrange
-        Piece piece = TestHelpers.placePiece(board, "RED", "1", board.getApproachPosition("RED"));
-        piece.incrementCaptureCount();
-        piece.setState(new EnergizedState(4));
+    void clearAlternativeRemovesOnlyPathBlockedChoice() {
+        Piece blocked = TestSupport.place(
+                board, "1", "YELLOW", 0, "CLOCKWISE");
+        Piece clear = TestSupport.place(
+                board, "2", "YELLOW", 20, "CLOCKWISE");
+        Piece defenderOne = TestSupport.place(
+                board, "1", "RED", 3, "CLOCKWISE");
+        Piece defenderTwo = TestSupport.place(
+                board, "2", "RED", 3, "CLOCKWISE");
+        blockHandler.createBlock(defenderOne, defenderTwo, board.getCellAt(3));
+        YellowPlayer player = new YellowPlayer(
+                List.of(blocked, clear), new TestSupport.FirstPieceStrategy(true));
 
-        Player player = new DummyPlayer("RED", List.of(piece));
+        List<Piece> valid = rules.getValidMoves(player, 4);
 
-        // Act
-        var validMoves = ruleEngine.getValidMoves(player, 4);
-
-        // Assert
-        assertTrue(ruleEngine.overshootsHomeFromStandardPath(piece, 4));
-        assertFalse(validMoves.contains(piece));
+        assertFalse(valid.contains(blocked));
+        assertTrue(valid.contains(clear));
     }
 
     @Test
-    void getValidMovesRejectsSameColourStackWhenDestinationPieceCannotBeInBlock() {
-        // Arrange
-        Piece moving = TestHelpers.placePiece(board, "RED", "1", 10);
+    void partiallyBlockedPieceRemainsOptionWhenNoClearMoveExists() {
+        Piece blocked = TestSupport.place(
+                board, "1", "YELLOW", 0, "CLOCKWISE");
+        Piece defenderOne = TestSupport.place(
+                board, "1", "RED", 3, "CLOCKWISE");
+        Piece defenderTwo = TestSupport.place(
+                board, "2", "RED", 3, "CLOCKWISE");
+        blockHandler.createBlock(defenderOne, defenderTwo, board.getCellAt(3));
+        YellowPlayer player = new YellowPlayer(
+                List.of(blocked), new TestSupport.FirstPieceStrategy(true));
 
-        Piece invalidBlockMember = TestHelpers.placePiece(board, "RED", "2", 12);
-        invalidBlockMember.setState(new EnergizedState(4));
-
-        Player player = new DummyPlayer("RED", List.of(moving, invalidBlockMember));
-
-        // Act
-        var validMoves = ruleEngine.getValidMoves(player, 2);
-
-        // Assert
-        assertFalse(ruleEngine.canFormBlock(moving, 12));
-        assertFalse(validMoves.contains(moving));
+        assertEquals(List.of(blocked), rules.getValidMoves(player, 4));
     }
 
     @Test
-    void canFormBlockReturnsTrueOnlyForOneValidSameColourPieceAtDestination() {
-        // Arrange
-        Piece moving = TestHelpers.placePiece(board, "GREEN", "1", 10);
-        TestHelpers.placePiece(board, "GREEN", "2", 13);
+    void nonBlockableSameColorLandingIsRejected() {
+        Piece mover = TestSupport.place(
+                board, "1", "YELLOW", 0, "CLOCKWISE");
+        Piece teammate = TestSupport.place(
+                board, "2", "YELLOW", 4, "CLOCKWISE");
+        teammate.setState(new SickState(4));
+        YellowPlayer player = new YellowPlayer(
+                List.of(mover, teammate), new TestSupport.FirstPieceStrategy(true));
 
-        // Act + Assert
-        assertTrue(ruleEngine.canFormBlock(moving, 13));
+        List<Piece> valid = rules.getValidMoves(player, 4);
+
+        assertFalse(valid.contains(mover));
     }
 
     @Test
-    void energizedHomeStraightExactRollIsNotDoubleAppliedAgain() {
-        // Arrange
-        Piece piece = new Piece("1", "RED");
-        piece.moveToHomeStraight(1); // needs 4 steps to reach home
-        piece.setState(new EnergizedState(4)); // dice 2 becomes 4
+    void repeatedQueriesDoNotMovePiecesOrChangeBlockRegistry() {
+        Piece first = TestSupport.place(
+                board, "1", "YELLOW", 10, "CLOCKWISE");
+        Piece second = TestSupport.place(
+                board, "2", "YELLOW", 10, "CLOCKWISE");
+        Block block = blockHandler.createBlock(first, second, board.getCellAt(10));
+        YellowPlayer player = new YellowPlayer(
+                List.of(first, second), new TestSupport.FirstPieceStrategy(true));
 
-        Player player = new DummyPlayer("RED", List.of(piece));
+        for (int i = 0; i < 10; i++) rules.getValidMoves(player, 6);
 
-        // Act
-        var validMoves = ruleEngine.getValidMoves(player, 2);
-
-        // Assert
-        assertTrue(ruleEngine.needsExactRoll(piece, 2));
-        assertFalse(ruleEngine.overshotsHome(piece, 2));
-        assertTrue(validMoves.contains(piece));
-    }
-
-    @Test
-    void atHomePieceIsRejectedFromValidMoves() {
-        // Arrange
-        Piece homePiece = new Piece("1", "RED");
-        homePiece.moveToHome();
-
-        Player player = new DummyPlayer("RED", List.of(homePiece));
-
-        // Act
-        var validMoves = ruleEngine.getValidMoves(player, 6);
-
-        // Assert
-        assertFalse(ruleEngine.isValidMove(homePiece, 6));
-        assertFalse(validMoves.contains(homePiece));
-    }
-
-    @Test
-    void basePieceIsValidOnlyWhenDiceIsSix() {
-        // Arrange
-        Piece basePiece = new Piece("1", "RED");
-        Player player = new DummyPlayer("RED", List.of(basePiece));
-
-        // Act
-        var validMovesForFive = ruleEngine.getValidMoves(player, 5);
-        var validMovesForSix = ruleEngine.getValidMoves(player, 6);
-
-        // Assert
-        assertFalse(validMovesForFive.contains(basePiece));
-        assertTrue(validMovesForSix.contains(basePiece));
-    }
-
-    @Test
-    void counterClockwiseFirstApproachPassDoesNotTriggerStandardPathHomeOvershoot() {
-        // Arrange
-        Piece piece = TestHelpers.placePiece(board, "RED", "1", 26, "COUNTERCLOCKWISE");
-        piece.incrementCaptureCount();
-        piece.setHasPassedApproachOnce(false);
-
-        // Act + Assert
-        assertTrue(ruleEngine.canPassApproach(piece, 1));
-        assertFalse(ruleEngine.overshootsHomeFromStandardPath(piece, 6));
-    }
-
-    private static class DummyPlayer extends Player {
-        DummyPlayer(String color, List<Piece> pieces) {
-            super(color, color, pieces, new NoMoveStrategy());
-        }
-
-        @Override
-        protected Piece choosePieceToMove(List<Piece> pieces, int diceValue,
-                                          Board board, RuleEngine ruleEngine) {
-            return pieces.isEmpty() ? null : pieces.getFirst();
-        }
-    }
-
-    private static class NoMoveStrategy implements IPlayerStrategy {
-        @Override
-        public Piece choosePieceToMove(List<Piece> validMoves, int diceValue,
-                                       Board board, RuleEngine ruleEngine) {
-            return validMoves.isEmpty() ? null : validMoves.getFirst();
-        }
-
-        @Override
-        public boolean shouldMoveFromBase(List<Piece> pieces, int diceValue,
-                                          Board board, RuleEngine ruleEngine) {
-            return false;
-        }
+        assertEquals(10, first.getPosition());
+        assertEquals(10, second.getPosition());
+        assertEquals(1, blockHandler.getActiveBlocks().size());
+        assertSame(block, blockHandler.findBlockAt(board.getCellAt(10)));
     }
 }

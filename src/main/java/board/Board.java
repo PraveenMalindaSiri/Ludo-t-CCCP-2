@@ -76,7 +76,7 @@ public class Board {
         if (cells == null) {
             throw new IllegalArgumentException("No home straight for color: " + color);
         }
-        return cells;
+        return new ArrayList<>(cells);
     }
 
     public HomeStraightCell getHomeStraightCell(String color, int index) {
