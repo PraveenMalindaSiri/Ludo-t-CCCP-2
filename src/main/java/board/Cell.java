@@ -17,7 +17,16 @@ public abstract class Cell {
     public abstract boolean canAcceptPiece(Piece piece);
 
     public void addPiece(Piece piece) {
-        pieces.add(piece);
+        if (piece == null) {
+            throw new IllegalArgumentException("Piece cannot be null.");
+        }
+        if (!canAcceptPiece(piece)) {
+            throw new IllegalArgumentException(
+                    getClass().getSimpleName() + " cannot accept " + piece.getFullName());
+        }
+        if (!pieces.contains(piece)) {
+            pieces.add(piece);
+        }
     }
 
     public void removePiece(Piece piece) {
@@ -29,7 +38,7 @@ public abstract class Cell {
     }
 
     public List<Piece> getPieces() {
-        return new ArrayList<Piece>(pieces);
+        return new ArrayList<>(pieces);
     }
 
     public int getPosition() {

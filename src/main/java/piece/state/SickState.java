@@ -35,6 +35,21 @@ public class SickState implements IPieceState {
         return this;
     }
 
+    @Override
+    public boolean canJoinBlock() {
+        return false;
+    }
+
+    @Override
+    public boolean shouldTeleportToBase() {
+        return false;
+    }
+
+    @Override
+    public IPieceState onTeleportHandled() {
+        return this;
+    }
+
     public int getRoundsRemaining() {
         return roundsRemaining;
     }

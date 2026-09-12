@@ -36,7 +36,7 @@ public class BlockHandler {
                 && !piece.isInHomeStraight()
                 && piece.getPosition() >= 0
                 && piece.getPosition() < config.getStandardCellCount()
-                && piece.isNormalState();
+                && piece.canJoinBlock();
     }
 
     // Block detection ------------------------------------------------------------------------------------
@@ -48,9 +48,7 @@ public class BlockHandler {
         Block block = activeBlocks.get(destination);
         if (block == null) return false;
 
-        cleanupInvalidPieces(block);
-
-        if (block.isDissolved() || block.getPieces().isEmpty()) {
+        if (!isConsistentBlock(block)) {
             return false;
         }
 
@@ -67,7 +65,8 @@ public class BlockHandler {
     }
 
     public Block findBlockAt(Cell cell) {
-        return activeBlocks.get(cell.getPosition());
+        Block block = activeBlocks.get(cell.getPosition());
+        return isConsistentBlock(block) ? block : null;
     }
 
     // Block creation ----------------------------------------------------------------------------------------
@@ -83,10 +82,32 @@ public class BlockHandler {
     }
 
     public void addToBlock(Piece piece, Block block, Cell cell) {
-        if (!canBeInBlock(piece)) return;
+        if (!canBeInBlock(piece) || block == null || block.getCell() != cell) return;
+        if (!block.getPieces().isEmpty()
+                && !block.getPieces().getFirst().getColor()
+                .equalsIgnoreCase(piece.getColor())) return;
 
         block.addPiece(piece);
         activeBlocks.put(cell.getPosition(), block);
+    }
+
+    public Block formOrJoinBlock(Piece piece, Cell cell) {
+        if (!canBeInBlock(piece) || cell == null) return null;
+
+        Block existing = findBlockAt(cell);
+        if (existing != null) {
+            addToBlock(piece, existing, cell);
+            return existing;
+        }
+
+        for (Piece other : cell.getPieces()) {
+            if (other != piece
+                    && other.getColor().equalsIgnoreCase(piece.getColor())
+                    && canBeInBlock(other)) {
+                return createBlock(piece, other, cell);
+            }
+        }
+        return null;
     }
 
     // After block moves, take any same-color normal pieces at the new cell. skips others
@@ -109,31 +130,15 @@ public class BlockHandler {
     // Block movement ----------------------------------------------------------------------------------------
 
     public void moveBlock(Block block, int diceValue) {
-        cleanupInvalidPieces(block);
-
-        if (block == null || block.isDissolved()) return;
+        if (!isConsistentBlock(block)) return;
 
         int movementPerPiece = getBlockMovementAmount(block, diceValue);
         if (movementPerPiece <= 0) return;
 
-        Cell oldCell = block.getCell();
-
-        for (Piece piece : block.getPieces()) {
-            oldCell.removePiece(piece);
-        }
-
-        block.move(diceValue);
-
-        int newPosition = block.getPosition();
-        Cell newCell = board.getCellAt(newPosition);
-
-        for (Piece piece : block.getPieces()) {
-            newCell.addPiece(piece);
-        }
-
-        activeBlocks.remove(oldCell.getPosition());
-        block.setCell(newCell);
-        activeBlocks.put(newPosition, block);
+        int oldPosition = block.getCell().getPosition();
+        board.moveBlock(block, diceValue);
+        activeBlocks.remove(oldPosition);
+        activeBlocks.put(block.getPosition(), block);
     }
 
     // direction of the piece farthest from home.
@@ -144,9 +149,7 @@ public class BlockHandler {
 
     // Calculates where the block will land after moving.
     public int calculateBlockDestination(Block block, int diceValue) {
-        cleanupInvalidPieces(block);
-
-        if (block == null || block.isDissolved()) return -1;
+        if (!isConsistentBlock(block)) return -1;
 
         int movementPerPiece = diceValue / block.getSize();
         String direction = resolveBlockDirection(block);
@@ -162,9 +165,7 @@ public class BlockHandler {
 
     // scan entire block path to check for first enemy block
     public int getFirstOpponentBlockPositionForBlock(Block block, int diceValue) {
-        cleanupInvalidPieces(block);
-
-        if (block == null || block.isDissolved()) return -1;
+        if (!isConsistentBlock(block)) return -1;
 
         int movementPerPiece = diceValue / block.getSize();
         String direction = resolveBlockDirection(block);
@@ -233,9 +234,6 @@ public class BlockHandler {
             String originalDir = piece.getOriginalDirection();
             piece.setDirection(originalDir);
 
-            Cell oldCell = board.getCellAt(piece.getPosition());
-            oldCell.removePiece(piece);
-
             int newPos;
             if ("CLOCKWISE".equals(originalDir)) {
                 newPos = (piece.getPosition() + sides)
@@ -246,8 +244,7 @@ public class BlockHandler {
                         % config.getStandardCellCount();
             }
 
-            piece.moveToPosition(newPos);
-            board.getCellAt(newPos).addPiece(piece);
+            board.moveOnStandardPath(piece, sides, newPos);
             movedPieces.add(piece);
         }
 
@@ -264,14 +261,7 @@ public class BlockHandler {
     // block capturing another block
     public void handleBlockCapture(Block attackingBlock, Block defendingBlock) {
         Cell defendingCell = defendingBlock.getCell();
-        List<Piece> defenders = new ArrayList<>(defendingBlock.getPieces());
-
-        for (Piece defender : defenders) {
-            defendingCell.removePiece(defender);
-            defender.capture();
-            board.getBaseCell(defender.getColor()).addPiece(defender);
-        }
-
+        board.sendToBase(defendingBlock);
         activeBlocks.remove(defendingCell.getPosition());
 
         for (Piece attacker : attackingBlock.getPieces()) {
@@ -374,37 +364,31 @@ public class BlockHandler {
     }
 
     public boolean canBlockMove(Block block, int diceValue) {
-        cleanupInvalidPieces(block);
-
-        return block != null
-                && !block.isDissolved()
+        return isConsistentBlock(block)
                 && getBlockMovementAmount(block, diceValue) > 0;
     }
 
-    private void cleanupInvalidPieces(Block block) {
-        if (block == null) return;
-
+    private boolean isConsistentBlock(Block block) {
+        if (block == null || block.isDissolved()) return false;
         Cell cell = block.getCell();
-        if (cell == null) return;
+        if (cell == null || activeBlocks.get(cell.getPosition()) != block) return false;
 
-        for (Piece piece : new ArrayList<>(block.getPieces())) {
+        String color = null;
+
+        for (Piece piece : block.getPieces()) {
             boolean stillInThisCell = cell.getPieces().contains(piece);
             boolean samePosition = piece.getPosition() == cell.getPosition();
-
-            if (!stillInThisCell || !samePosition || !canBeInBlock(piece)) {
-                block.removePiece(piece);
+            if (!stillInThisCell || !samePosition || !canBeInBlock(piece)
+                    || !piece.isInBlock()) {
+                return false;
+            }
+            if (color == null) {
+                color = piece.getColor();
+            } else if (!color.equalsIgnoreCase(piece.getColor())) {
+                return false;
             }
         }
-
-        if (block.isDissolved()) {
-            activeBlocks.remove(cell.getPosition());
-
-            block.restoreOriginalDirections();
-
-            for (Piece remaining : block.getPieces()) {
-                remaining.setInBlock(false);
-            }
-        }
+        return true;
     }
 
     public void removeFromBlockIfNeeded(Piece piece) {

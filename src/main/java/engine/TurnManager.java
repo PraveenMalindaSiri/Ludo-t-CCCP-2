@@ -3,6 +3,7 @@ package engine;
 import player.Player;
 import util.CyclicIterator;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -46,7 +47,7 @@ public class TurnManager {
     // Player info --------------------------------------------------------------------------------------------------
 
     public List<Player> getPlayers() {
-        return players;
+        return new ArrayList<>(players);
     }
 
     public int getIndexOf(Player player) {

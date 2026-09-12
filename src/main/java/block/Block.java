@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Same color pieces sharing one cell.
  */
-public class Block implements IMovable {
+public class Block implements IMovable, ICapturable {
 
     private final List<Piece> pieces;
     private Cell cell;
@@ -105,18 +105,44 @@ public class Block implements IMovable {
     // Piece -------------------------------------------------------------------------------------
 
     public void addPiece(Piece piece) {
+        if (piece == null || pieces.contains(piece)) return;
+        if (!pieces.isEmpty()) {
+            Piece first = pieces.getFirst();
+            if (!first.getColor().equalsIgnoreCase(piece.getColor())
+                    || first.getPosition() != piece.getPosition()) {
+                throw new IllegalArgumentException(
+                        "A block can contain only same-colour pieces in one cell.");
+            }
+        }
         piece.setInBlock(true);
         pieces.add(piece);
     }
 
     public void removePiece(Piece piece) {
-        pieces.remove(piece);
-        piece.setInBlock(false);
-        piece.setDirection(piece.getOriginalDirection());
+        if (pieces.remove(piece)) {
+            piece.setInBlock(false);
+            piece.setDirection(piece.getOriginalDirection());
+        }
     }
 
     public List<Piece> getPieces() {
         return new ArrayList<>(pieces);
+    }
+
+    @Override
+    public void capture() {
+        for (Piece piece : new ArrayList<>(pieces)) piece.capture();
+        pieces.clear();
+    }
+
+    @Override
+    public void resetState() {
+        capture();
+    }
+
+    @Override
+    public String getColor() {
+        return pieces.isEmpty() ? "" : pieces.getFirst().getColor();
     }
 
     public int getSize() {

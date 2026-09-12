@@ -22,4 +22,19 @@ public interface IPieceState {
      * FrozenState uses this to track consecutive 3s.
      */
     IPieceState onDiceRoll(int value);
+
+    /**
+     * State-specific block eligibility. Only a normal piece may join a block.
+     */
+    boolean canJoinBlock();
+
+    /**
+     * Signals that this state has requested a move back to base.
+     */
+    boolean shouldTeleportToBase();
+
+    /**
+     * Called after a pending teleport request has been handled.
+     */
+    IPieceState onTeleportHandled();
 }

@@ -5,6 +5,8 @@ import block.IMovable;
 import config.GameConfig;
 import piece.state.*;
 
+import java.util.List;
+
 /**
  * Represents one game piece belonging to a player.
  */
@@ -57,6 +59,11 @@ public class Piece implements IMovable, ICapturable {
     }
 
     @Override
+    public List<Piece> getPieces() {
+        return List.of(this);
+    }
+
+    @Override
     public void capture() {
         resetState();
     }
@@ -94,6 +101,18 @@ public class Piece implements IMovable, ICapturable {
 
     public IPieceState getState() {
         return currentState;
+    }
+
+    public boolean canJoinBlock() {
+        return currentState.canJoinBlock();
+    }
+
+    public boolean shouldTeleportToBase() {
+        return currentState.shouldTeleportToBase();
+    }
+
+    public void markTeleportHandled() {
+        currentState = currentState.onTeleportHandled();
     }
 
     // Position helpers -------------------------------------------------------------------------------------------
@@ -153,19 +172,7 @@ public class Piece implements IMovable, ICapturable {
     }
 
     public boolean isNormalState() {
-        return currentState instanceof NormalState;
-    }
-
-    public boolean isFrozen() {
-        return currentState instanceof FrozenState;
-    }
-
-    public boolean isSick() {
-        return currentState instanceof SickState;
-    }
-
-    public boolean isEnergized() {
-        return currentState instanceof EnergizedState;
+        return currentState.canJoinBlock();
     }
 
     public void clearTemporaryState() {

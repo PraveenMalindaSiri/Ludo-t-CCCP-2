@@ -2,14 +2,14 @@ package player;
 
 import board.Board;
 import piece.Piece;
-import player.strategy.BlockStrategy;
+import player.strategy.IPlayerStrategy;
 import rules.RuleEngine;
 
 import java.util.List;
 
 public class GreenPlayer extends Player {
 
-    public GreenPlayer(List<Piece> pieces, BlockStrategy strategy) {
+    public GreenPlayer(List<Piece> pieces, IPlayerStrategy strategy) {
         super("GREEN", "Green", pieces, strategy);
     }
 

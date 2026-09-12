@@ -19,7 +19,14 @@ public class CaptureCommand implements ICommand {
     }
 
     @Override
-    public void execute() {
+    public CommandResult execute() {
+        CommandResult result = new CommandResult(CommandResult.Type.CAPTURE);
+        int fromPosition = capturedPiece.getPosition();
+        String direction = capturedPiece.getDirection();
         captureHandler.handleCapture(capturerPiece, capturedPiece);
+        result.addCapturedPiece(capturedPiece, fromPosition);
+        result.setMovement(fromPosition,
+                capturedPiece.getPosition(), 0, direction);
+        return result;
     }
 }

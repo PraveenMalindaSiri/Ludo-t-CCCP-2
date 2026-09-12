@@ -1,8 +1,9 @@
 package mystery.effect;
 
 import board.Board;
+import mystery.MysteryOutcome;
 import piece.Piece;
 
 public interface IMysteryEffect {
-    void apply(Piece piece, Board board);
+    MysteryOutcome apply(Piece piece, Board board);
 }

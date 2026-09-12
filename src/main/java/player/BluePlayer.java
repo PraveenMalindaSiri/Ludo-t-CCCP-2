@@ -1,16 +1,15 @@
 package player;
 
 import board.Board;
-import mystery.MysteryManager;
 import piece.Piece;
-import player.strategy.RandomStrategy;
+import player.strategy.IPlayerStrategy;
 import rules.RuleEngine;
 
 import java.util.List;
 
 public class BluePlayer extends Player {
 
-    public BluePlayer(List<Piece> pieces, RandomStrategy strategy) {
+    public BluePlayer(List<Piece> pieces, IPlayerStrategy strategy) {
         super("BLUE", "Blue", pieces, strategy);
     }
 

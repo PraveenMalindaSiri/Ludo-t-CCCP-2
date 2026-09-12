@@ -50,6 +50,22 @@ public class CaptureHandler {
         return opponent;
     }
 
+    public Piece getOpponentAt(Cell cell, Piece mover) {
+        if (cell == null || mover == null) return null;
+
+        Piece opponent = null;
+        int opponentCount = 0;
+        for (Piece target : cell.getPieces()) {
+            if (target == mover) continue;
+            if (!isRealStandardPathPieceAt(target, cell.getPosition())) continue;
+            if (!target.getColor().equalsIgnoreCase(mover.getColor())) {
+                opponent = target;
+                opponentCount++;
+            }
+        }
+        return opponentCount == 1 ? opponent : null;
+    }
+
     // capture
     public void handleCapture(Piece capturerPiece, Piece capturedPiece) {
         if (capturerPiece == null || capturedPiece == null) return;
@@ -61,26 +77,15 @@ public class CaptureHandler {
                 && capturedPiece.getPosition() >= 0
                 && capturedPiece.getPosition() < config.getStandardCellCount();
 
-        Cell currentCell = findStandardCellContaining(capturedPiece);
-        if (currentCell != null) {
-            currentCell.removePiece(capturedPiece);
-        }
-
-        Cell baseCell = board.getBaseCell(capturedPiece.getColor());
-
         if (!wasActuallyOnBoard) {
-            if (!baseCell.getPieces().contains(capturedPiece)) {
-                baseCell.addPiece(capturedPiece);
+            if (!board.getBaseCell(capturedPiece.getColor())
+                    .getPieces().contains(capturedPiece)) {
+                board.initializeInBase(capturedPiece);
             }
             return;
         }
 
-        capturedPiece.capture();
-
-        if (!baseCell.getPieces().contains(capturedPiece)) {
-            baseCell.addPiece(capturedPiece);
-        }
-
+        board.sendToBase(capturedPiece);
         capturerPiece.incrementCaptureCount();
     }
 
@@ -94,15 +99,4 @@ public class CaptureHandler {
                 && piece.getPosition() == position;
     }
 
-    private Cell findStandardCellContaining(Piece piece) {
-        for (int i = 0; i < config.getStandardCellCount(); i++) {
-            Cell cell = board.getCellAt(i);
-
-            if (cell.getPieces().contains(piece)) {
-                return cell;
-            }
-        }
-
-        return null;
-    }
 }

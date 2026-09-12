@@ -1,18 +1,12 @@
 package event;
 
 import config.GameConfig;
-import mystery.MysteryManager;
+import mystery.MysteryOutcome;
 import piece.Piece;
-import player.Player;
 
 import java.util.List;
 
 public class GameLogger implements IGameEventListener {
-    private final MysteryManager mysteryManager;
-
-    public GameLogger(MysteryManager mysteryManager) {
-        this.mysteryManager = mysteryManager;
-    }
 
     // helper
     private String capitalize(String color) {
@@ -180,37 +174,33 @@ public class GameLogger implements IGameEventListener {
     // Mystery info ----------------------------------------------------------------
 
     @Override
-    public void onMysteryLanding(String color, String pieceName,
-                                 String destination) {
+    public void onMysteryResolved(String color, String pieceName,
+                                  MysteryOutcome outcome) {
         System.out.println(capitalize(color)
                 + " player lands on a mystery cell and is teleported to "
-                + destination + ".");
+                + outcome.getDestination() + ".");
         System.out.println(capitalize(color) + " piece "
-                + pieceName + " teleported to " + destination + ".");
-    }
+                + pieceName + " teleported to " + outcome.getDestination() + ".");
 
-    @Override
-    public void onTeleportEffect(String color, String pieceName,
-                                 String effect) {
-        System.out.println(capitalize(color) + " piece "
-                + pieceName + " " + effect);
-    }
-
-    @Override
-    public void onDirectionChanged(String color, String pieceName,
-                                   String oldDirection, String newDirection) {
-        if ("COUNTERCLOCKWISE".equals(newDirection)) {
-            // CW piece changed to CCW at Gamma
-            System.out.println("The " + capitalize(color)
+        switch (outcome.getType()) {
+            case ALPHA_ENERGIZED -> System.out.println(capitalize(color)
                     + " piece " + pieceName
+                    + " feels energized, and movement speed doubles.");
+            case ALPHA_SICK -> System.out.println(capitalize(color)
+                    + " piece " + pieceName
+                    + " feels sick, and movement speed halves.");
+            case BETA -> System.out.println(capitalize(color)
+                    + " piece " + pieceName
+                    + " attends briefing and cannot move for four rounds.");
+            case GAMMA_DIRECTION_CHANGED -> System.out.println("The "
+                    + capitalize(color) + " piece " + pieceName
                     + ", which was moving clockwise,"
                     + " has changed to moving counterclockwise.");
-        } else {
-            // CCW piece redirected to Beta from Gamma
-            System.out.println("The " + capitalize(color)
-                    + " piece " + pieceName
+            case GAMMA_TO_BETA -> System.out.println("The "
+                    + capitalize(color) + " piece " + pieceName
                     + " is moving in a counterclockwise direction."
                     + " Teleporting to Beta from Gamma.");
+            default -> { }
         }
     }
 
@@ -222,13 +212,20 @@ public class GameLogger implements IGameEventListener {
                 + duration + " rounds.");
     }
 
+    @Override
+    public void onStateTeleportToBase(String color, String pieceName) {
+        System.out.println(capitalize(color) + " piece " + pieceName
+                + " is movement-restricted and has rolled three consecutively."
+                + " Teleporting piece " + pieceName + " to base.");
+    }
+
     // Round End ----------------------------------------------------------------
 
     @Override
-    public void onRoundEnd(List<Player> players) {
-        for (Player player : players) {
-            int boardCount = player.getPiecesOnBoard().size();
-            int baseCount = player.getPiecesInBase().size();
+    public void onRoundEnd(GameSnapshot snapshot) {
+        for (GameSnapshot.PlayerView player : snapshot.getPlayers()) {
+            int boardCount = player.getBoardCount();
+            int baseCount = player.getBaseCount();
 
             System.out.println(capitalize(player.getColor()) + " player now has "
                     + boardCount + "/" + GameConfig.getInstance().getPiecesPerPlayer()
@@ -241,17 +238,17 @@ public class GameLogger implements IGameEventListener {
                     + capitalize(player.getColor()));
             System.out.println("============================");
 
-            for (Piece piece : player.getPieces()) {
+            for (GameSnapshot.PieceView piece : player.getPieces()) {
                 System.out.println("Piece " + piece.getName()
-                        + " -> " + piece.positionLabel());
+                        + " -> " + piece.getPosition());
             }
         }
 
-        if (mysteryManager.isActive()) {
+        if (snapshot.isMysteryActive()) {
             System.out.println("The mystery cell is at "
-                    + mysteryManager.getPosition()
+                    + snapshot.getMysteryPosition()
                     + " and will be at that location for the next "
-                    + mysteryManager.getRoundsRemaining() + " values.");
+                    + snapshot.getMysteryRoundsRemaining() + " values.");
         }
     }
 
@@ -263,16 +260,14 @@ public class GameLogger implements IGameEventListener {
     }
 
     @Override
-    public void onFinalPlacements(List<Player> finishOrder) {
+    public void onFinalPlacements(List<String> finishOrder) {
         System.out.println("============================");
         System.out.println("Final Places");
         System.out.println("============================");
 
         for (int i = 0; i < finishOrder.size(); i++) {
-            Player player = finishOrder.get(i);
-
             System.out.println(ordinal(i + 1) + " place: "
-                    + capitalize(player.getColor()) + " player");
+                    + capitalize(finishOrder.get(i)) + " player");
         }
     }
 }

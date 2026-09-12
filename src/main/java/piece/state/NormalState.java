@@ -25,6 +25,21 @@ public class NormalState implements IPieceState {
     }
 
     @Override
+    public boolean canJoinBlock() {
+        return true;
+    }
+
+    @Override
+    public boolean shouldTeleportToBase() {
+        return false;
+    }
+
+    @Override
+    public IPieceState onTeleportHandled() {
+        return this;
+    }
+
+    @Override
     public String toString() {
         return "Normal";
     }

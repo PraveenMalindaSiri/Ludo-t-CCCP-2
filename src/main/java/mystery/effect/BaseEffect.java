@@ -1,13 +1,14 @@
 package mystery.effect;
 
 import board.Board;
+import mystery.MysteryOutcome;
 import piece.Piece;
 
 public class BaseEffect implements IMysteryEffect {
     // Go to base cell
     @Override
-    public void apply(Piece piece, Board board) {
-        piece.capture();
-        board.getBaseCell(piece.getColor()).addPiece(piece);
+    public MysteryOutcome apply(Piece piece, Board board) {
+        board.sendToBase(piece);
+        return new MysteryOutcome(MysteryOutcome.Type.BASE, "Base");
     }
 }

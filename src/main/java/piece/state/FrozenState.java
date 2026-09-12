@@ -53,13 +53,21 @@ public class FrozenState implements IPieceState {
         return this;
     }
 
+    @Override
+    public boolean canJoinBlock() {
+        return false;
+    }
+
+    @Override
     public boolean shouldTeleportToBase() {
         return shouldTeleportToBase;
     }
 
-    public void resetTeleportFlag() {
+    @Override
+    public IPieceState onTeleportHandled() {
         shouldTeleportToBase = false;
         consecutiveThrees = 0;
+        return this;
     }
 
     public int getRoundsRemaining() {

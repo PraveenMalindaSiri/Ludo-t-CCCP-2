@@ -2,14 +2,14 @@ package player;
 
 import board.Board;
 import piece.Piece;
-import player.strategy.WinStrategy;
+import player.strategy.IPlayerStrategy;
 import rules.RuleEngine;
 
 import java.util.List;
 
 public class YellowPlayer extends Player {
 
-    public YellowPlayer(List<Piece> pieces, WinStrategy strategy) {
+    public YellowPlayer(List<Piece> pieces, IPlayerStrategy strategy) {
         super("YELLOW", "Yellow", pieces, strategy);
     }
 

@@ -4,7 +4,6 @@ import board.Board;
 import config.GameConfig;
 import mystery.effect.*;
 import piece.Piece;
-import piece.state.EnergizedState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,28 +20,34 @@ public class MysteryManager {
     private final List<IMysteryEffect> effects;
     private final GameConfig config;
 
-    private int lastEffectIndex;
-    private boolean lastAlphaWasEnergized;
-    private boolean lastGammaWasCCWToBeta;
-
     public MysteryManager(Board board, Random random) {
+        this(board, random, createDefaultEffects(random));
+    }
+
+    public MysteryManager(Board board, Random random,
+                          List<IMysteryEffect> effects) {
         this.board = board;
         this.random = random;
         this.config = GameConfig.getInstance();
+        if (effects == null || effects.isEmpty()) {
+            throw new IllegalArgumentException("Mystery effects cannot be empty.");
+        }
+        this.effects = new ArrayList<>(effects);
         this.isActive = false;
         this.roundsWithPiecesOnPath = 0;
         this.previousPosition = -1;
-        this.lastEffectIndex = -1;
+    }
 
-        // effects list
+    private static List<IMysteryEffect> createDefaultEffects(Random random) {
         BetaEffect betaEffect = new BetaEffect();
-        effects = new ArrayList<>();
-        effects.add(new AlphaEffect(random));
-        effects.add(betaEffect);
-        effects.add(new GammaEffect(betaEffect));
-        effects.add(new BaseEffect());
-        effects.add(new StartEffect());
-        effects.add(new ApproachEffect());
+        List<IMysteryEffect> defaultEffects = new ArrayList<>();
+        defaultEffects.add(new AlphaEffect(random));
+        defaultEffects.add(betaEffect);
+        defaultEffects.add(new GammaEffect(betaEffect));
+        defaultEffects.add(new BaseEffect());
+        defaultEffects.add(new StartEffect());
+        defaultEffects.add(new ApproachEffect());
+        return defaultEffects;
     }
 
     // spawn mystery cell
@@ -78,19 +83,9 @@ public class MysteryManager {
     }
 
     // pick on effect, remove piece from cell and apply effect
-    public void handleLanding(Piece piece) {
-        lastEffectIndex = random.nextInt(effects.size());
-        lastGammaWasCCWToBeta = false;
-
-        board.getCellAt(currentPosition).removePiece(piece);
-        effects.get(lastEffectIndex).apply(piece, board);
-
-        if (lastEffectIndex == 0) {
-            lastAlphaWasEnergized = piece.getState() instanceof EnergizedState;
-        }
-        if (lastEffectIndex == 2) {
-            lastGammaWasCCWToBeta = (piece.getPosition() == config.getBetaCell());
-        }
+    public MysteryOutcome handleLanding(Piece piece) {
+        int effectIndex = random.nextInt(effects.size());
+        return effects.get(effectIndex).apply(piece, board);
     }
 
     public boolean isOnMysteryCell(int position) {
@@ -109,15 +104,4 @@ public class MysteryManager {
         return isActive;
     }
 
-    public int getLastEffectIndex() {
-        return lastEffectIndex;
-    }
-
-    public boolean isLastAlphaEnergized() {
-        return lastAlphaWasEnergized;
-    }
-
-    public boolean isLastGammaCCWToBeta() {
-        return lastGammaWasCCWToBeta;
-    }
 }

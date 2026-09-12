@@ -17,14 +17,10 @@ public class RuleEngine {
     private final Board board;
     private final GameConfig config;
     private final BlockHandler blockHandler;
-    private final CaptureHandler captureHandler;
 
-    public RuleEngine(Board board,
-                      BlockHandler blockHandler,
-                      CaptureHandler captureHandler) {
+    public RuleEngine(Board board, BlockHandler blockHandler) {
         this.board = board;
         this.blockHandler = blockHandler;
-        this.captureHandler = captureHandler;
         this.config = GameConfig.getInstance();
     }
 
@@ -155,11 +151,6 @@ public class RuleEngine {
                         board.getCellAt(piece.getPosition()));
 
                 if (block == null || !blockHandler.canBeInBlock(piece)) {
-                    if (block != null) {
-                        blockHandler.breakBlock(piece, block);
-                    } else {
-                        blockHandler.removeFromBlockIfNeeded(piece);
-                    }
                     continue;
                 }
 
@@ -178,6 +169,23 @@ public class RuleEngine {
             }
 
             valid.add(piece);
+        }
+
+        boolean hasClearAlternative = false;
+        for (Piece piece : valid) {
+            if (!piece.isInBase()
+                    && (piece.isInHomeStraight() || piece.isInBlock()
+                    || blockHandler.getFirstOpponentBlockPosition(piece, diceValue) == -1)) {
+                hasClearAlternative = true;
+                break;
+            }
+        }
+
+        if (hasClearAlternative) {
+            valid.removeIf(piece -> !piece.isInBase()
+                    && !piece.isInHomeStraight()
+                    && !piece.isInBlock()
+                    && blockHandler.getFirstOpponentBlockPosition(piece, diceValue) != -1);
         }
 
         return valid;

@@ -1,51 +1,51 @@
 package event;
 
-import player.Player;
-
+import mystery.MysteryOutcome;
 import java.util.List;
 
 public interface IGameEventListener {
-    void onPlayerInfo(String color, List<String> pieceNames);
+    default void onPlayerInfo(String color, List<String> pieceNames) { }
 
-    void onInitialRoll(String color, int value);
+    default void onInitialRoll(String color, int value) { }
 
-    void onDiceRolled(String color, int value);
+    default void onDiceRolled(String color, int value) { }
 
-    void onFirstPlayer(String color);
+    default void onFirstPlayer(String color) { }
 
-    void onTurnOrder(List<String> colors);
+    default void onTurnOrder(List<String> colors) { }
 
-    void onPieceEnteredBoard(String color, String pieceName,
-                             int boardCount, int baseCount);
+    default void onPieceEnteredBoard(String color, String pieceName,
+                                     int boardCount, int baseCount) { }
 
-    void onPieceMoved(String color, String pieceName,
-                      int from, int to, int value, String direction);
+    default void onPieceMoved(String color, String pieceName,
+                              int from, int to, int value,
+                              String direction) { }
 
-    void onPieceBlocked(String color, String pieceName,
-                        int from, int to,
-                        String blockingColor, String blockingName);
+    default void onPieceBlocked(String color, String pieceName,
+                                int from, int to,
+                                String blockingColor,
+                                String blockingName) { }
 
-    void onNoOtherPieces(String color);
+    default void onNoOtherPieces(String color) { }
 
-    void onMovedBeforeBlock(String color, String pieceName, int stoppedAt);
+    default void onMovedBeforeBlock(String color, String pieceName,
+                                    int stoppedAt) { }
 
-    void onPieceCaptured(String capturerColor, String capturerName,
-                         int cell,
-                         String capturedColor, String capturedName,
-                         int boardCount, int baseCount);
+    default void onPieceCaptured(String capturerColor, String capturerName,
+                                 int cell, String capturedColor,
+                                 String capturedName, int boardCount,
+                                 int baseCount) { }
 
-    void onMysteryLanding(String color, String pieceName, String destination);
+    default void onMysteryResolved(String color, String pieceName,
+                                   MysteryOutcome outcome) { }
 
-    void onTeleportEffect(String color, String pieceName, String effect);
+    default void onMysteryCellSpawned(int position, int duration) { }
 
-    void onDirectionChanged(String color, String pieceName,
-                            String oldDirection, String newDirection);
+    default void onStateTeleportToBase(String color, String pieceName) { }
 
-    void onMysteryCellSpawned(int position, int duration);
+    default void onRoundEnd(GameSnapshot snapshot) { }
 
-    void onRoundEnd(List<Player> players);
+    default void onGameWon(String color) { }
 
-    void onGameWon(String color);
-
-    void onFinalPlacements(List<Player> finishOrder);
+    default void onFinalPlacements(List<String> finishOrder) { }
 }
