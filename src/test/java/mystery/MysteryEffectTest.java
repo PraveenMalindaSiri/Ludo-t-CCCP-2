@@ -1,5 +1,7 @@
 package mystery;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import board.Board;
 import config.GameConfig;
 import mystery.effect.AlphaEffect;
@@ -16,8 +18,6 @@ import piece.state.FrozenState;
 import piece.state.SickState;
 import support.TestSupport;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 class MysteryEffectTest {
     private Board board;
 
@@ -28,10 +28,9 @@ class MysteryEffectTest {
 
     @Test
     void alphaCanApplyEnergizedOutcome() {
-        Piece piece = TestSupport.place(
-                board, "1", "YELLOW", 4, "CLOCKWISE");
-        AlphaEffect effect = new AlphaEffect(new TestSupport.SequenceRandom(
-                new int[0], new boolean[]{true}));
+        Piece piece = TestSupport.place(board, "1", "YELLOW", 4, "CLOCKWISE");
+        AlphaEffect effect =
+                new AlphaEffect(new TestSupport.SequenceRandom(new int[0], new boolean[] {true}));
 
         MysteryOutcome outcome = effect.apply(piece, board);
 
@@ -42,10 +41,9 @@ class MysteryEffectTest {
 
     @Test
     void alphaCanApplySickOutcome() {
-        Piece piece = TestSupport.place(
-                board, "1", "YELLOW", 4, "CLOCKWISE");
-        AlphaEffect effect = new AlphaEffect(new TestSupport.SequenceRandom(
-                new int[0], new boolean[]{false}));
+        Piece piece = TestSupport.place(board, "1", "YELLOW", 4, "CLOCKWISE");
+        AlphaEffect effect =
+                new AlphaEffect(new TestSupport.SequenceRandom(new int[0], new boolean[] {false}));
 
         MysteryOutcome outcome = effect.apply(piece, board);
 
@@ -55,8 +53,7 @@ class MysteryEffectTest {
 
     @Test
     void betaTeleportsAndFreezesPiece() {
-        Piece piece = TestSupport.place(
-                board, "1", "YELLOW", 4, "CLOCKWISE");
+        Piece piece = TestSupport.place(board, "1", "YELLOW", 4, "CLOCKWISE");
 
         MysteryOutcome outcome = new BetaEffect().apply(piece, board);
 
@@ -67,11 +64,9 @@ class MysteryEffectTest {
 
     @Test
     void clockwiseGammaChangesDirection() {
-        Piece piece = TestSupport.place(
-                board, "1", "YELLOW", 4, "CLOCKWISE");
+        Piece piece = TestSupport.place(board, "1", "YELLOW", 4, "CLOCKWISE");
 
-        MysteryOutcome outcome = new GammaEffect(new BetaEffect())
-                .apply(piece, board);
+        MysteryOutcome outcome = new GammaEffect(new BetaEffect()).apply(piece, board);
 
         assertEquals(MysteryOutcome.Type.GAMMA_DIRECTION_CHANGED, outcome.getType());
         assertEquals(GameConfig.getInstance().getGammaCell(), piece.getPosition());
@@ -82,11 +77,9 @@ class MysteryEffectTest {
 
     @Test
     void counterclockwiseGammaDelegatesToBetaEffect() {
-        Piece piece = TestSupport.place(
-                board, "1", "YELLOW", 4, "COUNTERCLOCKWISE");
+        Piece piece = TestSupport.place(board, "1", "YELLOW", 4, "COUNTERCLOCKWISE");
 
-        MysteryOutcome outcome = new GammaEffect(new BetaEffect())
-                .apply(piece, board);
+        MysteryOutcome outcome = new GammaEffect(new BetaEffect()).apply(piece, board);
 
         assertEquals(MysteryOutcome.Type.GAMMA_TO_BETA, outcome.getType());
         assertEquals(GameConfig.getInstance().getBetaCell(), piece.getPosition());
@@ -95,12 +88,9 @@ class MysteryEffectTest {
 
     @Test
     void baseStartAndApproachEffectsUseBoardRelocationMethods() {
-        Piece basePiece = TestSupport.place(
-                board, "1", "YELLOW", 7, "CLOCKWISE");
-        Piece startPiece = TestSupport.place(
-                board, "2", "BLUE", 7, "CLOCKWISE");
-        Piece approachPiece = TestSupport.place(
-                board, "3", "GREEN", 7, "CLOCKWISE");
+        Piece basePiece = TestSupport.place(board, "1", "YELLOW", 7, "CLOCKWISE");
+        Piece startPiece = TestSupport.place(board, "2", "BLUE", 7, "CLOCKWISE");
+        Piece approachPiece = TestSupport.place(board, "3", "GREEN", 7, "CLOCKWISE");
 
         MysteryOutcome base = new BaseEffect().apply(basePiece, board);
         MysteryOutcome start = new StartEffect().apply(startPiece, board);

@@ -1,8 +1,7 @@
 package block;
 
-import piece.Piece;
-
 import java.util.List;
+import piece.Piece;
 
 public interface IMovable {
     void move(int steps);

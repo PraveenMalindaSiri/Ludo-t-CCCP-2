@@ -1,8 +1,8 @@
 package piece.state;
 
 /**
- * Applied when teleported to Alpha outcome is "energized".
- * Movement doubles for effectDuration rounds, then auto-transitions to NormalState.
+ * Applied when teleported to Alpha outcome is "energized". Movement doubles for effectDuration
+ * rounds, then auto-transitions to NormalState.
  */
 public class EnergizedState implements IPieceState {
     private int roundsRemaining;

@@ -1,8 +1,6 @@
 package piece.state;
 
-/**
- * Default state. No modifiers applied to movement.
- */
+/** Default state. No modifiers applied to movement. */
 public class NormalState implements IPieceState {
     @Override
     public int calculateMovement(int diceValue) {

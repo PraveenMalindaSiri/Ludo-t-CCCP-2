@@ -1,8 +1,12 @@
 package engine;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import board.Board;
 import event.GameSnapshot;
 import event.IGameEventListener;
+import java.util.ArrayList;
+import java.util.List;
 import mystery.MysteryManager;
 import mystery.MysteryOutcome;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,11 +19,6 @@ import rules.BlockHandler;
 import rules.CaptureHandler;
 import rules.RuleEngine;
 import support.TestSupport;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class GameEngineTest {
     private Board board;
@@ -34,25 +33,33 @@ class GameEngineTest {
         yellowPiece = new Piece("1", "YELLOW");
         bluePiece = new Piece("1", "BLUE");
 
-        Player yellow = new YellowPlayer(
-                List.of(yellowPiece), new TestSupport.FirstPieceStrategy(true));
-        Player blue = new BluePlayer(
-                List.of(bluePiece), new TestSupport.FirstPieceStrategy(true));
+        Player yellow =
+                new YellowPlayer(List.of(yellowPiece), new TestSupport.FirstPieceStrategy(true));
+        Player blue = new BluePlayer(List.of(bluePiece), new TestSupport.FirstPieceStrategy(true));
 
         CaptureHandler capture = new CaptureHandler(board);
         BlockHandler block = new BlockHandler(board);
         RuleEngine rules = new RuleEngine(board, block);
-        MysteryManager mystery = new MysteryManager(
-                board, new TestSupport.SequenceRandom(0),
-                List.of((piece, gameBoard) ->
-                        new MysteryOutcome(MysteryOutcome.Type.START, "unused")));
+        MysteryManager mystery =
+                new MysteryManager(
+                        board,
+                        new TestSupport.SequenceRandom(0),
+                        List.of(
+                                (piece, gameBoard) ->
+                                        new MysteryOutcome(MysteryOutcome.Type.START, "unused")));
 
         // Initial rolls: Yellow 6, Blue 1. Yellow's turn: 6 then 1.
         // Blue's first turn: 1.
-        engine = new GameEngine(board, List.of(yellow, blue), rules,
-                capture, block, mystery,
-                new TestSupport.SequenceDice(6, 1, 6, 1, 1),
-                new TestSupport.FixedCoinToss("HEADS"));
+        engine =
+                new GameEngine(
+                        board,
+                        List.of(yellow, blue),
+                        rules,
+                        capture,
+                        block,
+                        mystery,
+                        new TestSupport.SequenceDice(6, 1, 6, 1, 1),
+                        new TestSupport.FixedCoinToss("HEADS"));
         listener = new RecordingListener();
         engine.addEventListener(listener);
     }
@@ -112,8 +119,7 @@ class GameEngineTest {
 
         assertEquals(2, snapshot.getPlayers().size());
         assertEquals("YELLOW", snapshot.getPlayers().getFirst().getColor());
-        assertThrows(UnsupportedOperationException.class,
-                () -> snapshot.getPlayers().clear());
+        assertThrows(UnsupportedOperationException.class, () -> snapshot.getPlayers().clear());
     }
 
     private static final class RecordingListener implements IGameEventListener {
@@ -141,15 +147,14 @@ class GameEngineTest {
         }
 
         @Override
-        public void onPieceEnteredBoard(String color, String pieceName,
-                                        int boardCount, int baseCount) {
+        public void onPieceEnteredBoard(
+                String color, String pieceName, int boardCount, int baseCount) {
             entryEvents++;
         }
 
         @Override
-        public void onPieceMoved(String color, String pieceName,
-                                 int from, int to, int value,
-                                 String direction) {
+        public void onPieceMoved(
+                String color, String pieceName, int from, int to, int value, String direction) {
             moveEvents.add(color + ":" + from + "->" + to);
         }
 

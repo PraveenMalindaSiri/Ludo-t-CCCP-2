@@ -22,12 +22,16 @@ public class GammaEffect implements IMysteryEffect {
             piece.setDirection("COUNTERCLOCKWISE");
             return new MysteryOutcome(
                     MysteryOutcome.Type.GAMMA_DIRECTION_CHANGED,
-                    "Gamma", oldDirection, piece.getDirection());
+                    "Gamma",
+                    oldDirection,
+                    piece.getDirection());
         } else {
             betaEffect.apply(piece, board);
             return new MysteryOutcome(
                     MysteryOutcome.Type.GAMMA_TO_BETA,
-                    "Beta", "COUNTERCLOCKWISE", "COUNTERCLOCKWISE");
+                    "Beta",
+                    "COUNTERCLOCKWISE",
+                    "COUNTERCLOCKWISE");
         }
     }
 }

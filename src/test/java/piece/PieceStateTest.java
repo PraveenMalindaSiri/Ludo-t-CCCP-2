@@ -1,12 +1,12 @@
 package piece;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.Test;
 import piece.state.EnergizedState;
 import piece.state.FrozenState;
 import piece.state.NormalState;
 import piece.state.SickState;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class PieceStateTest {
 

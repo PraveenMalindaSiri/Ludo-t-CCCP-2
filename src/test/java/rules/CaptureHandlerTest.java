@@ -1,11 +1,11 @@
 package rules;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import board.Board;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import piece.Piece;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class CaptureHandlerTest {
     private Board board;
@@ -19,10 +19,8 @@ class CaptureHandlerTest {
 
     @Test
     void detectsSingleOpponentAtDestination() {
-        Piece mover = support.TestSupport.place(
-                board, "1", "YELLOW", 4, "CLOCKWISE");
-        Piece enemy = support.TestSupport.place(
-                board, "1", "RED", 8, "CLOCKWISE");
+        Piece mover = support.TestSupport.place(board, "1", "YELLOW", 4, "CLOCKWISE");
+        Piece enemy = support.TestSupport.place(board, "1", "RED", 8, "CLOCKWISE");
 
         assertTrue(handler.isCapturePossible(mover, 8));
         assertSame(enemy, handler.getCapturedPieceAt(8, "YELLOW"));
@@ -30,10 +28,8 @@ class CaptureHandlerTest {
 
     @Test
     void captureSendsOpponentToBaseAndCreditsCapturer() {
-        Piece mover = support.TestSupport.place(
-                board, "1", "YELLOW", 8, "CLOCKWISE");
-        Piece enemy = support.TestSupport.place(
-                board, "1", "RED", 8, "CLOCKWISE");
+        Piece mover = support.TestSupport.place(board, "1", "YELLOW", 8, "CLOCKWISE");
+        Piece enemy = support.TestSupport.place(board, "1", "RED", 8, "CLOCKWISE");
 
         handler.handleCapture(mover, enemy);
 
@@ -45,10 +41,8 @@ class CaptureHandlerTest {
 
     @Test
     void sameColorPieceIsNeverCaptured() {
-        Piece mover = support.TestSupport.place(
-                board, "1", "YELLOW", 8, "CLOCKWISE");
-        Piece teammate = support.TestSupport.place(
-                board, "2", "YELLOW", 8, "CLOCKWISE");
+        Piece mover = support.TestSupport.place(board, "1", "YELLOW", 8, "CLOCKWISE");
+        Piece teammate = support.TestSupport.place(board, "2", "YELLOW", 8, "CLOCKWISE");
 
         handler.handleCapture(mover, teammate);
 
@@ -59,8 +53,7 @@ class CaptureHandlerTest {
 
     @Test
     void multipleOccupantsAreNotTreatedAsSinglePieceCapture() {
-        Piece mover = support.TestSupport.place(
-                board, "1", "YELLOW", 4, "CLOCKWISE");
+        Piece mover = support.TestSupport.place(board, "1", "YELLOW", 4, "CLOCKWISE");
         support.TestSupport.place(board, "1", "RED", 8, "CLOCKWISE");
         support.TestSupport.place(board, "2", "RED", 8, "CLOCKWISE");
 

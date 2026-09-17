@@ -21,8 +21,7 @@ public final class MysteryOutcome {
         this(type, destination, null, null);
     }
 
-    public MysteryOutcome(Type type, String destination,
-                          String oldDirection, String newDirection) {
+    public MysteryOutcome(Type type, String destination, String oldDirection, String newDirection) {
         this.type = type;
         this.destination = destination;
         this.oldDirection = oldDirection;

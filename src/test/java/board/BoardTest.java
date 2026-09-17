@@ -1,11 +1,11 @@
 package board;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import config.GameConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import piece.Piece;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class BoardTest {
     private Board board;
@@ -20,10 +20,8 @@ class BoardTest {
         GameConfig config = GameConfig.getInstance();
 
         assertEquals(52, board.getStandardPath().size());
-        assertSame(board.getStartingCell("yellow"),
-                board.getCellAt(config.getYellowStart()));
-        assertSame(board.getApproachCell("YELLOW"),
-                board.getCellAt(config.getYellowApproach()));
+        assertSame(board.getStartingCell("yellow"), board.getCellAt(config.getYellowStart()));
+        assertSame(board.getApproachCell("YELLOW"), board.getCellAt(config.getYellowApproach()));
         assertEquals(5, board.getHomeStraight("YELLOW").size());
         assertEquals(Piece.BASE_POSITION, board.getBaseCell("YELLOW").getPosition());
         assertEquals(Piece.HOME_POSITION, board.getHomeCell("YELLOW").getPosition());
@@ -63,18 +61,18 @@ class BoardTest {
     void specialCellsRejectPiecesOwnedByAnotherColor() {
         Piece red = new Piece("1", "RED");
 
-        assertThrows(IllegalArgumentException.class,
-                () -> board.getBaseCell("YELLOW").addPiece(red));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class, () -> board.getBaseCell("YELLOW").addPiece(red));
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> board.getHomeStraightCell("YELLOW", 0).addPiece(red));
-        assertThrows(IllegalArgumentException.class,
-                () -> board.getHomeCell("YELLOW").addPiece(red));
+        assertThrows(
+                IllegalArgumentException.class, () -> board.getHomeCell("YELLOW").addPiece(red));
     }
 
     @Test
     void cellAndBoardQueriesReturnDefensiveCopies() {
-        Piece piece = support.TestSupport.place(
-                board, "1", "YELLOW", 7, "CLOCKWISE");
+        Piece piece = support.TestSupport.place(board, "1", "YELLOW", 7, "CLOCKWISE");
 
         board.getCellAt(7).getPieces().clear();
         board.getStandardPath().clear();
@@ -87,9 +85,7 @@ class BoardTest {
     void invalidBoardRequestsFailClearly() {
         assertThrows(IllegalArgumentException.class, () -> board.getCellAt(-1));
         assertThrows(IllegalArgumentException.class, () -> board.getCellAt(52));
-        assertThrows(IllegalArgumentException.class,
-                () -> board.getStartingCell("PURPLE"));
-        assertThrows(IllegalArgumentException.class,
-                () -> board.getBaseCell("PURPLE"));
+        assertThrows(IllegalArgumentException.class, () -> board.getStartingCell("PURPLE"));
+        assertThrows(IllegalArgumentException.class, () -> board.getBaseCell("PURPLE"));
     }
 }

@@ -2,9 +2,7 @@ package board;
 
 import piece.Piece;
 
-/**
- * The final destination for a piece. Position -1 says not on standard path.
- */
+/** The final destination for a piece. Position -1 says not on standard path. */
 public class HomeCell extends Cell {
     private final String ownerColor;
 

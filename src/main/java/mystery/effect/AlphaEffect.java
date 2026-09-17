@@ -2,12 +2,11 @@ package mystery.effect;
 
 import board.Board;
 import config.GameConfig;
+import java.util.Random;
 import mystery.MysteryOutcome;
 import piece.Piece;
 import piece.state.EnergizedState;
 import piece.state.SickState;
-
-import java.util.Random;
 
 public class AlphaEffect implements IMysteryEffect {
     private final Random random;
@@ -26,12 +25,10 @@ public class AlphaEffect implements IMysteryEffect {
 
         if (random.nextBoolean()) {
             piece.setState(new EnergizedState(duration));
-            return new MysteryOutcome(
-                    MysteryOutcome.Type.ALPHA_ENERGIZED, "Alpha");
+            return new MysteryOutcome(MysteryOutcome.Type.ALPHA_ENERGIZED, "Alpha");
         } else {
             piece.setState(new SickState(duration));
-            return new MysteryOutcome(
-                    MysteryOutcome.Type.ALPHA_SICK, "Alpha");
+            return new MysteryOutcome(MysteryOutcome.Type.ALPHA_SICK, "Alpha");
         }
     }
 }

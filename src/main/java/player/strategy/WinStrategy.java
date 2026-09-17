@@ -1,13 +1,13 @@
 package player.strategy;
 
 import board.Board;
+import java.util.List;
 import piece.Piece;
 import rules.*;
 
-import java.util.List;
-
 /**
- * Prioritizes winning. Empty the base ASAP. only capture needed amount. moves the piece closest to home
+ * Prioritizes winning. Empty the base ASAP. only capture needed amount. moves the piece closest to
+ * home
  */
 public class WinStrategy implements IPlayerStrategy {
     private final CaptureHandler captureHandler;
@@ -19,8 +19,8 @@ public class WinStrategy implements IPlayerStrategy {
     }
 
     @Override
-    public Piece choosePieceToMove(List<Piece> validMoves, int diceValue,
-                                   Board board, RuleEngine ruleEngine) {
+    public Piece choosePieceToMove(
+            List<Piece> validMoves, int diceValue, Board board, RuleEngine ruleEngine) {
         // piece needing capture that can capture right now
         Piece needsCapturePiece = findCaptureForNeedyPiece(validMoves, diceValue, ruleEngine);
         if (needsCapturePiece != null) return needsCapturePiece;
@@ -33,8 +33,8 @@ public class WinStrategy implements IPlayerStrategy {
     }
 
     // pieces with no captures
-    private Piece findCaptureForNeedyPiece(List<Piece> validMoves, int diceValue,
-                                           RuleEngine ruleEngine) {
+    private Piece findCaptureForNeedyPiece(
+            List<Piece> validMoves, int diceValue, RuleEngine ruleEngine) {
         for (Piece piece : validMoves) {
             if (piece.isInBase() || piece.isAtHome() || piece.isInHomeStraight()) continue;
             if (piece.getCaptureCount() > 0) continue;
@@ -53,9 +53,7 @@ public class WinStrategy implements IPlayerStrategy {
 
         for (Piece piece : validMoves) {
             if (piece.isInBase() || piece.isAtHome()) continue;
-            int distance = piece.isInHomeStraight()
-                    ? 0
-                    : blockHandler.distanceToHomeEntry(piece);
+            int distance = piece.isInHomeStraight() ? 0 : blockHandler.distanceToHomeEntry(piece);
             if (distance < minDistance) {
                 minDistance = distance;
                 best = piece;
@@ -65,7 +63,8 @@ public class WinStrategy implements IPlayerStrategy {
     }
 
     @Override
-    public boolean shouldMoveFromBase(List<Piece> pieces, int diceValue, Board board, RuleEngine ruleEngine) {
+    public boolean shouldMoveFromBase(
+            List<Piece> pieces, int diceValue, Board board, RuleEngine ruleEngine) {
         return true;
     }
 }

@@ -1,7 +1,6 @@
 package dice;
 
 import config.GameConfig;
-
 import java.util.Random;
 
 public class Dice implements IDice {

@@ -2,9 +2,7 @@ package board;
 
 import piece.Piece;
 
-/**
- * One of the 52 cells on the circular standard path.
- */
+/** One of the 52 cells on the circular standard path. */
 public class StandardCell extends Cell {
 
     public StandardCell(int position) {

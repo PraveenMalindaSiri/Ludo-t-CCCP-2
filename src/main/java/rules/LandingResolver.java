@@ -9,19 +9,18 @@ import mystery.MysteryManager;
 import mystery.MysteryOutcome;
 import piece.Piece;
 
-/**
- * Runs the common post-movement landing sequence exactly once per arrival.
- */
+/** Runs the common post-movement landing sequence exactly once per arrival. */
 public final class LandingResolver {
     private final Board board;
     private final CaptureHandler captureHandler;
     private final BlockHandler blockHandler;
     private final MysteryManager mysteryManager;
 
-    public LandingResolver(Board board,
-                           CaptureHandler captureHandler,
-                           BlockHandler blockHandler,
-                           MysteryManager mysteryManager) {
+    public LandingResolver(
+            Board board,
+            CaptureHandler captureHandler,
+            BlockHandler blockHandler,
+            MysteryManager mysteryManager) {
         this.board = board;
         this.captureHandler = captureHandler;
         this.blockHandler = blockHandler;
@@ -32,15 +31,13 @@ public final class LandingResolver {
         resolve(mover, result, true);
     }
 
-    private void resolve(Piece mover, CommandResult result,
-                         boolean allowMysteryTrigger) {
+    private void resolve(Piece mover, CommandResult result, boolean allowMysteryTrigger) {
         if (!isOnStandardPath(mover)) return;
 
         resolveOccupants(mover, result);
         if (!isOnStandardPath(mover)) return;
 
-        if (allowMysteryTrigger
-                && mysteryManager.isOnMysteryCell(mover.getPosition())) {
+        if (allowMysteryTrigger && mysteryManager.isOnMysteryCell(mover.getPosition())) {
             breakBlockBeforeTeleport(mover);
             MysteryOutcome outcome = mysteryManager.handleLanding(mover);
             result.setMysteryOutcome(outcome);
@@ -77,8 +74,7 @@ public final class LandingResolver {
             CommandResult captureResult =
                     new CaptureCommand(mover, captured, captureHandler).execute();
             for (Piece piece : captureResult.getCapturedPieces()) {
-                result.addCapturedPiece(
-                        piece, captureResult.getCapturePosition(piece));
+                result.addCapturedPiece(piece, captureResult.getCapturePosition(piece));
             }
             return;
         }
@@ -103,8 +99,7 @@ public final class LandingResolver {
 
     private boolean hasSameColorCompanion(Cell cell, Piece mover) {
         for (Piece other : cell.getPieces()) {
-            if (other != mover
-                    && other.getColor().equalsIgnoreCase(mover.getColor())) {
+            if (other != mover && other.getColor().equalsIgnoreCase(mover.getColor())) {
                 return true;
             }
         }

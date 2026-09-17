@@ -4,6 +4,9 @@ import board.Board;
 import dice.CoinToss;
 import dice.Dice;
 import engine.GameEngine;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import mystery.MysteryManager;
 import mystery.effect.AlphaEffect;
 import mystery.effect.ApproachEffect;
@@ -17,13 +20,9 @@ import rules.BlockHandler;
 import rules.CaptureHandler;
 import rules.RuleEngine;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-
 /** Creates one complete, isolated game-session object graph. */
 public final class GameFactory {
-    private GameFactory() { }
+    private GameFactory() {}
 
     public static GameEngine createGame(long randomSeed) {
         Random random = new Random(randomSeed);
@@ -40,21 +39,26 @@ public final class GameFactory {
         effects.add(new BaseEffect());
         effects.add(new StartEffect());
         effects.add(new ApproachEffect());
-        MysteryManager mysteryManager =
-                new MysteryManager(board, random, effects);
+        MysteryManager mysteryManager = new MysteryManager(board, random, effects);
 
         List<Player> players = new ArrayList<>();
-        players.add(PlayerFactory.createPlayer(
-                "YELLOW", captureHandler, blockHandler, mysteryManager));
-        players.add(PlayerFactory.createPlayer(
-                "BLUE", captureHandler, blockHandler, mysteryManager));
-        players.add(PlayerFactory.createPlayer(
-                "RED", captureHandler, blockHandler, mysteryManager));
-        players.add(PlayerFactory.createPlayer(
-                "GREEN", captureHandler, blockHandler, mysteryManager));
+        players.add(
+                PlayerFactory.createPlayer("YELLOW", captureHandler, blockHandler, mysteryManager));
+        players.add(
+                PlayerFactory.createPlayer("BLUE", captureHandler, blockHandler, mysteryManager));
+        players.add(
+                PlayerFactory.createPlayer("RED", captureHandler, blockHandler, mysteryManager));
+        players.add(
+                PlayerFactory.createPlayer("GREEN", captureHandler, blockHandler, mysteryManager));
 
-        return new GameEngine(board, players, ruleEngine,
-                captureHandler, blockHandler, mysteryManager,
-                new Dice(random), new CoinToss(random));
+        return new GameEngine(
+                board,
+                players,
+                ruleEngine,
+                captureHandler,
+                blockHandler,
+                mysteryManager,
+                new Dice(random),
+                new CoinToss(random));
     }
 }

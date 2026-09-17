@@ -2,16 +2,14 @@ package player.strategy;
 
 import board.Board;
 import board.Cell;
-import config.GameConfig;
+import java.util.List;
 import piece.Piece;
 import rules.BlockHandler;
 import rules.RuleEngine;
 
-import java.util.List;
-
 /**
- * Prioritizes winning through blocking. Always build blocks with 6 before take new pieces.
- * move home straight first, then blocks, otherwise piece closest to approach.
+ * Prioritizes winning through blocking. Always build blocks with 6 before take new pieces. move
+ * home straight first, then blocks, otherwise piece closest to approach.
  */
 public class BlockStrategy implements IPlayerStrategy {
     private final BlockHandler blockHandler;
@@ -21,8 +19,8 @@ public class BlockStrategy implements IPlayerStrategy {
     }
 
     @Override
-    public Piece choosePieceToMove(List<Piece> validMoves, int diceValue,
-                                   Board board, RuleEngine ruleEngine) {
+    public Piece choosePieceToMove(
+            List<Piece> validMoves, int diceValue, Board board, RuleEngine ruleEngine) {
         // move piece already in home straight
         Piece homeStraightPiece = getHomeStraightPiece(validMoves);
         if (homeStraightPiece != null) return homeStraightPiece;
@@ -64,8 +62,8 @@ public class BlockStrategy implements IPlayerStrategy {
     }
 
     // piece that can form a block
-    private Piece getBlockFormingPiece(List<Piece> validMoves, int diceValue,
-                                       RuleEngine ruleEngine) {
+    private Piece getBlockFormingPiece(
+            List<Piece> validMoves, int diceValue, RuleEngine ruleEngine) {
         for (Piece piece : validMoves) {
             if (piece.isInBase() || piece.isAtHome() || piece.isInHomeStraight()) continue;
             int destination = ruleEngine.calculateDestination(piece, diceValue);
@@ -80,9 +78,7 @@ public class BlockStrategy implements IPlayerStrategy {
         int minDistance = Integer.MAX_VALUE;
         for (Piece piece : validMoves) {
             if (piece.isInBase() || piece.isAtHome()) continue;
-            int distance = piece.isInHomeStraight()
-                    ? 0
-                    : blockHandler.distanceToHomeEntry(piece);
+            int distance = piece.isInHomeStraight() ? 0 : blockHandler.distanceToHomeEntry(piece);
             if (distance < minDistance) {
                 minDistance = distance;
                 best = piece;
@@ -92,8 +88,8 @@ public class BlockStrategy implements IPlayerStrategy {
     }
 
     @Override
-    public boolean shouldMoveFromBase(List<Piece> pieces, int diceValue,
-                                      Board board, RuleEngine ruleEngine) {
+    public boolean shouldMoveFromBase(
+            List<Piece> pieces, int diceValue, Board board, RuleEngine ruleEngine) {
         for (Piece piece : pieces) {
             if (!piece.isOnBoard() || piece.isInBase() || piece.isAtHome()) continue;
             if (piece.isInHomeStraight()) continue;
@@ -105,8 +101,10 @@ public class BlockStrategy implements IPlayerStrategy {
 
             if (!destCell.getPieces().isEmpty()
                     && destCell.getPieces().size() == 1
-                    && destCell.getPieces().getFirst().getColor()
-                    .equalsIgnoreCase(piece.getColor())) {
+                    && destCell.getPieces()
+                            .getFirst()
+                            .getColor()
+                            .equalsIgnoreCase(piece.getColor())) {
                 return false;
             }
         }

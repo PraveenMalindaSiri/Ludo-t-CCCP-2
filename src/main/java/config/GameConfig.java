@@ -29,8 +29,7 @@ public final class GameConfig {
     private final int redApproach = 25;
     private final int greenApproach = 38;
 
-    private GameConfig() {
-    }
+    private GameConfig() {}
 
     public static GameConfig getInstance() {
         return INSTANCE;
@@ -119,5 +118,4 @@ public final class GameConfig {
     public int getGreenApproach() {
         return greenApproach;
     }
-
 }

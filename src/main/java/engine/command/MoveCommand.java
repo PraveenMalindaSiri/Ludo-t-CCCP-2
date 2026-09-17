@@ -1,15 +1,12 @@
 package engine.command;
 
-import board.Board;
 import block.IMovable;
+import board.Board;
+import java.util.List;
 import piece.Piece;
 import rules.LandingResolver;
 
-import java.util.List;
-
-/**
- * standard path movement action.
- */
+/** standard path movement action. */
 public class MoveCommand implements ICommand {
     private final IMovable movable;
     private final Board board;
@@ -17,8 +14,12 @@ public class MoveCommand implements ICommand {
     private final int steps;
     private final LandingResolver landingResolver;
 
-    public MoveCommand(IMovable movable, Board board, int destination,
-                       int steps, LandingResolver landingResolver) {
+    public MoveCommand(
+            IMovable movable,
+            Board board,
+            int destination,
+            int steps,
+            LandingResolver landingResolver) {
         this.movable = movable;
         this.board = board;
         this.destination = destination;

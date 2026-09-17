@@ -3,8 +3,8 @@ package board;
 import piece.Piece;
 
 /**
- * Where pieces wait before entering the board.
- * Position -2 is for indicating not on standard path, not at home.
+ * Where pieces wait before entering the board. Position -2 is for indicating not on standard path,
+ * not at home.
  */
 public class BaseCell extends Cell {
     private final String ownerColor;

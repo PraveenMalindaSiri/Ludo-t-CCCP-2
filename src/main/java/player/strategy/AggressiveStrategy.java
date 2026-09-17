@@ -1,17 +1,13 @@
 package player.strategy;
 
 import board.Board;
-import config.GameConfig;
+import java.util.List;
 import piece.Piece;
 import rules.*;
 
-import java.util.List;
-
-
 /**
- * Prioritizes capturing opponents
- * Captures opponent closest to its own home, Keep one piece.
- * Only get new pieces if one can capture any with 6, avoid block
+ * Prioritizes capturing opponents Captures opponent closest to its own home, Keep one piece. Only
+ * get new pieces if one can capture any with 6, avoid block
  */
 public class AggressiveStrategy implements IPlayerStrategy {
     private final CaptureHandler captureHandler;
@@ -23,8 +19,8 @@ public class AggressiveStrategy implements IPlayerStrategy {
     }
 
     @Override
-    public Piece choosePieceToMove(List<Piece> validMoves, int diceValue,
-                                   Board board, RuleEngine ruleEngine) {
+    public Piece choosePieceToMove(
+            List<Piece> validMoves, int diceValue, Board board, RuleEngine ruleEngine) {
         // capture opponent closest to its home
         Piece capturingPiece = findBestCapture(validMoves, diceValue, board, ruleEngine);
         if (capturingPiece != null) return capturingPiece;
@@ -46,8 +42,8 @@ public class AggressiveStrategy implements IPlayerStrategy {
     }
 
     // find the piece that can capture opponent close to their home
-    private Piece findBestCapture(List<Piece> validMoves, int diceValue,
-                                  Board board, RuleEngine ruleEngine) {
+    private Piece findBestCapture(
+            List<Piece> validMoves, int diceValue, Board board, RuleEngine ruleEngine) {
         Piece bestPiece = null;
         int minDistance = Integer.MAX_VALUE;
 
@@ -55,8 +51,7 @@ public class AggressiveStrategy implements IPlayerStrategy {
             if (piece.isInBase() || piece.isAtHome() || piece.isInHomeStraight()) continue;
 
             int destination = ruleEngine.calculateDestination(piece, diceValue);
-            Piece target = captureHandler.getCapturedPieceAt(
-                    destination, piece.getColor());
+            Piece target = captureHandler.getCapturedPieceAt(destination, piece.getColor());
 
             if (target != null) {
                 int distance = blockHandler.distanceToHomeEntry(target);
@@ -70,12 +65,11 @@ public class AggressiveStrategy implements IPlayerStrategy {
     }
 
     @Override
-    public boolean shouldMoveFromBase(List<Piece> pieces, int diceValue,
-                                      Board board, RuleEngine ruleEngine) {
+    public boolean shouldMoveFromBase(
+            List<Piece> pieces, int diceValue, Board board, RuleEngine ruleEngine) {
         boolean hasPieceOnBoard = false;
         for (Piece p : pieces) {
-            if (p.isOnBoard() && !p.isInBase()
-                    && !p.isAtHome() && !p.isInHomeStraight()) {
+            if (p.isOnBoard() && !p.isInBase() && !p.isAtHome() && !p.isInHomeStraight()) {
                 hasPieceOnBoard = true;
                 break;
             }
@@ -83,12 +77,13 @@ public class AggressiveStrategy implements IPlayerStrategy {
         if (!hasPieceOnBoard) return true;
 
         for (Piece piece : pieces) {
-            if (!piece.isOnBoard() || piece.isInBase()
-                    || piece.isAtHome() || piece.isInHomeStraight()) continue;
+            if (!piece.isOnBoard()
+                    || piece.isInBase()
+                    || piece.isAtHome()
+                    || piece.isInHomeStraight()) continue;
 
             int destination = ruleEngine.calculateDestination(piece, diceValue);
-            Piece target = captureHandler.getCapturedPieceAt(
-                    destination, piece.getColor());
+            Piece target = captureHandler.getCapturedPieceAt(destination, piece.getColor());
             if (target != null) return false;
         }
         return true;

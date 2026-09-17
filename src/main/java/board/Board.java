@@ -4,15 +4,12 @@ import block.Block;
 import block.ICapturable;
 import block.IMovable;
 import config.GameConfig;
-import piece.Piece;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import piece.Piece;
 
-/**
- * Holds all cells on the board.
- */
+/** Holds all cells on the board. */
 public class Board {
     private final List<Cell> standardPath;
     private final Map<String, StartingCell> startingCells;
@@ -29,8 +26,7 @@ public class Board {
             Map<String, ApproachCell> approachCells,
             Map<String, List<HomeStraightCell>> homeStraightCells,
             Map<String, HomeCell> homeCells,
-            Map<String, BaseCell> baseCells
-    ) {
+            Map<String, BaseCell> baseCells) {
         this.standardPath = standardPath;
         this.startingCells = startingCells;
         this.approachCells = approachCells;
@@ -40,7 +36,8 @@ public class Board {
         this.config = GameConfig.getInstance();
     }
 
-    // Normal cell -------------------------------------------------------------------------------------
+    // Normal cell
+    // -------------------------------------------------------------------------------------
 
     public Cell getCellAt(int position) {
         if (position < 0 || position >= config.getStandardCellCount()) {
@@ -53,7 +50,8 @@ public class Board {
         return new ArrayList<>(standardPath);
     }
 
-    // Special cell -------------------------------------------------------------------------------------
+    // Special cell
+    // -------------------------------------------------------------------------------------
 
     public StartingCell getStartingCell(String color) {
         StartingCell cell = startingCells.get(color.toUpperCase());
@@ -99,7 +97,8 @@ public class Board {
         return cell;
     }
 
-    // Position info -------------------------------------------------------------------------------------
+    // Position info
+    // -------------------------------------------------------------------------------------
 
     public int getStartingPosition(String color) {
         return getStartingCell(color).getPosition();
@@ -114,8 +113,7 @@ public class Board {
 
         Cell cell = getCellAt(position);
 
-        return cell instanceof ApproachCell
-                && ((ApproachCell) cell).isApproachFor(color);
+        return cell instanceof ApproachCell && ((ApproachCell) cell).isApproachFor(color);
     }
 
     public boolean isStartingCell(int position, String color) {
@@ -143,8 +141,7 @@ public class Board {
         destination.addPiece(piece);
     }
 
-    public void moveOnStandardPath(IMovable movable, int steps,
-                                   int expectedDestination) {
+    public void moveOnStandardPath(IMovable movable, int steps, int expectedDestination) {
         Cell source = requireStandardCell(movable);
         Cell destination = getCellAt(expectedDestination);
 
@@ -193,11 +190,11 @@ public class Board {
         int destinationPosition = block.getPosition();
         int movement = diceValue / block.getSize();
         if ("CLOCKWISE".equals(block.getDirection())) {
-            destinationPosition = Math.floorMod(
-                    destinationPosition + movement, config.getStandardCellCount());
+            destinationPosition =
+                    Math.floorMod(destinationPosition + movement, config.getStandardCellCount());
         } else {
-            destinationPosition = Math.floorMod(
-                    destinationPosition - movement, config.getStandardCellCount());
+            destinationPosition =
+                    Math.floorMod(destinationPosition - movement, config.getStandardCellCount());
         }
         moveOnStandardPath(block, diceValue, destinationPosition);
         Cell destination = getCellAt(destinationPosition);
@@ -210,8 +207,7 @@ public class Board {
         if (piece.isInHomeStraight()) {
             return getHomeStraightCell(piece.getColor(), piece.getHomeStraightIndex());
         }
-        if (piece.getPosition() >= 0
-                && piece.getPosition() < config.getStandardCellCount()) {
+        if (piece.getPosition() >= 0 && piece.getPosition() < config.getStandardCellCount()) {
             return getCellAt(piece.getPosition());
         }
         return null;
@@ -225,8 +221,7 @@ public class Board {
     }
 
     private Cell requireStandardCell(IMovable movable) {
-        if (movable.getPosition() < 0
-                || movable.getPosition() >= config.getStandardCellCount()) {
+        if (movable.getPosition() < 0 || movable.getPosition() >= config.getStandardCellCount()) {
             throw new IllegalStateException("Piece is not on the standard path.");
         }
         return getCellAt(movable.getPosition());

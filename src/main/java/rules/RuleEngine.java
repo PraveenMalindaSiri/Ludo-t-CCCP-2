@@ -4,15 +4,12 @@ import block.Block;
 import board.Board;
 import board.Cell;
 import config.GameConfig;
+import java.util.ArrayList;
+import java.util.List;
 import piece.Piece;
 import player.Player;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Validates moves and calculates destinations.
- */
+/** Validates moves and calculates destinations. */
 public class RuleEngine {
     private final Board board;
     private final GameConfig config;
@@ -32,7 +29,8 @@ public class RuleEngine {
         return consecutiveSixCount >= config.getMaxConsecutiveSixes();
     }
 
-    // Home straight rules ------------------------------------------------------------------------------------
+    // Home straight rules
+    // ------------------------------------------------------------------------------------
     // Need at least one capture
     public boolean canEnterHomeStraight(Piece piece) {
         return piece.getCaptureCount() >= 1;
@@ -65,8 +63,7 @@ public class RuleEngine {
         if (!canPassApproach(piece, diceValue)) return false;
         if (!canEnterHomeStraight(piece)) return false;
 
-        if ("COUNTERCLOCKWISE".equals(piece.getDirection())
-                && !canEnterHomeStraightCCW(piece)) {
+        if ("COUNTERCLOCKWISE".equals(piece.getDirection()) && !canEnterHomeStraightCCW(piece)) {
             return false;
         }
 
@@ -91,7 +88,8 @@ public class RuleEngine {
         }
     }
 
-    // Check approach cell ------------------------------------------------------------------------------------
+    // Check approach cell
+    // ------------------------------------------------------------------------------------
 
     public boolean canPassApproach(Piece piece, int diceValue) {
         if (piece.isInHomeStraight() || piece.isInBase() || piece.isAtHome()) {
@@ -107,9 +105,10 @@ public class RuleEngine {
         }
 
         for (int step = 1; step <= effective; step++) {
-            int checkPos = "CLOCKWISE".equals(piece.getDirection())
-                    ? (current + step) % cellCount
-                    : (current - step + cellCount) % cellCount;
+            int checkPos =
+                    "CLOCKWISE".equals(piece.getDirection())
+                            ? (current + step) % cellCount
+                            : (current - step + cellCount) % cellCount;
 
             if (board.isApproachCell(checkPos, piece.getColor())) {
                 return true;
@@ -119,13 +118,15 @@ public class RuleEngine {
         return false;
     }
 
-    // Validate moving forward ------------------------------------------------------------------------------------
+    // Validate moving forward
+    // ------------------------------------------------------------------------------------
 
     public boolean isValidMove(Piece piece, int diceValue) {
         if (piece.isAtHome()) return false;
         if (!piece.canMove()) return false;
         if (piece.isInBase()) return canMoveFromBase(diceValue);
-        if (piece.getEffectiveMovement(diceValue) <= 0) return false; // sick pieces dice value 1 is 0
+        if (piece.getEffectiveMovement(diceValue) <= 0)
+            return false; // sick pieces dice value 1 is 0
         if (piece.isInHomeStraight()) return !overshotsHome(piece, diceValue);
         return true;
     }
@@ -147,8 +148,7 @@ public class RuleEngine {
             }
 
             if (piece.isInBlock()) {
-                Block block = blockHandler.findBlockAt(
-                        board.getCellAt(piece.getPosition()));
+                Block block = blockHandler.findBlockAt(board.getCellAt(piece.getPosition()));
 
                 if (block == null || !blockHandler.canBeInBlock(piece)) {
                     continue;
@@ -174,24 +174,30 @@ public class RuleEngine {
         boolean hasClearAlternative = false;
         for (Piece piece : valid) {
             if (!piece.isInBase()
-                    && (piece.isInHomeStraight() || piece.isInBlock()
-                    || blockHandler.getFirstOpponentBlockPosition(piece, diceValue) == -1)) {
+                    && (piece.isInHomeStraight()
+                            || piece.isInBlock()
+                            || blockHandler.getFirstOpponentBlockPosition(piece, diceValue)
+                                    == -1)) {
                 hasClearAlternative = true;
                 break;
             }
         }
 
         if (hasClearAlternative) {
-            valid.removeIf(piece -> !piece.isInBase()
-                    && !piece.isInHomeStraight()
-                    && !piece.isInBlock()
-                    && blockHandler.getFirstOpponentBlockPosition(piece, diceValue) != -1);
+            valid.removeIf(
+                    piece ->
+                            !piece.isInBase()
+                                    && !piece.isInHomeStraight()
+                                    && !piece.isInBlock()
+                                    && blockHandler.getFirstOpponentBlockPosition(piece, diceValue)
+                                            != -1);
         }
 
         return valid;
     }
 
-    // Same-color check ------------------------------------------------------------------------------------
+    // Same-color check
+    // ------------------------------------------------------------------------------------
 
     public boolean isSameColorAtDestination(Piece piece, int destination) {
         Cell cell = board.getCellAt(destination);
@@ -206,10 +212,11 @@ public class RuleEngine {
         if (!cell.hasPieces()) return false;
         if (!blockHandler.canBeInBlock(piece)) return false;
 
-        long blockableSameColor = cell.getPieces().stream()
-                .filter(p -> p.getColor().equalsIgnoreCase(piece.getColor()))
-                .filter(blockHandler::canBeInBlock)
-                .count();
+        long blockableSameColor =
+                cell.getPieces().stream()
+                        .filter(p -> p.getColor().equalsIgnoreCase(piece.getColor()))
+                        .filter(blockHandler::canBeInBlock)
+                        .count();
 
         return blockableSameColor == 1;
     }
@@ -234,7 +241,6 @@ public class RuleEngine {
 
         return hasSameColorPiece && !blockHandler.canBeInBlock(movingPiece);
     }
-
 
     private int calculateStepsOverApproach(Piece piece, int effective) {
         return effective - blockHandler.distanceFromApproach(piece);

@@ -3,8 +3,8 @@ package piece.state;
 import config.GameConfig;
 
 /**
- * Applied when teleported to Beta. The piece cannot move for effectDuration rounds.
- * If the player rolls three consecutive 3s while frozen, the piece teleports to base.
+ * Applied when teleported to Beta. The piece cannot move for effectDuration rounds. If the player
+ * rolls three consecutive 3s while frozen, the piece teleports to base.
  */
 public class FrozenState implements IPieceState {
     private int roundsRemaining;
@@ -17,8 +17,7 @@ public class FrozenState implements IPieceState {
         this.roundsRemaining = roundsRemaining;
         this.consecutiveThrees = 0;
         this.shouldTeleportToBase = false;
-        this.requiredConsecutiveThrees =
-                GameConfig.getInstance().getConsecutiveThreesForTeleport();
+        this.requiredConsecutiveThrees = GameConfig.getInstance().getConsecutiveThreesForTeleport();
     }
 
     @Override

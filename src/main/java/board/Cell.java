@@ -1,9 +1,8 @@
 package board;
 
-import piece.Piece;
-
 import java.util.ArrayList;
 import java.util.List;
+import piece.Piece;
 
 public abstract class Cell {
     protected final int position;

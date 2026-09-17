@@ -2,14 +2,11 @@ package block;
 
 import board.Cell;
 import config.GameConfig;
-import piece.Piece;
-
 import java.util.ArrayList;
 import java.util.List;
+import piece.Piece;
 
-/**
- * Same color pieces sharing one cell.
- */
+/** Same color pieces sharing one cell. */
 public class Block implements IMovable, ICapturable {
 
     private final List<Piece> pieces;
@@ -53,9 +50,7 @@ public class Block implements IMovable, ICapturable {
             }
         }
 
-        return farthestFromHome != null
-                ? farthestFromHome.getDirection()
-                : "CLOCKWISE";
+        return farthestFromHome != null ? farthestFromHome.getDirection() : "CLOCKWISE";
     }
 
     private int getApproachPosition(String color) {
@@ -93,7 +88,7 @@ public class Block implements IMovable, ICapturable {
             distance = Math.floorMod(approach - current, count);
         } else {
             distance = Math.floorMod(current - approach, count);
-            
+
             if (!piece.getHasPassedApproachOnce()) {
                 distance += count;
             }

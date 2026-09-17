@@ -1,18 +1,16 @@
 package util;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 class CyclicIteratorTest {
 
     @Test
     void iteratorCyclesInStableOrder() {
-        CyclicIterator<String> iterator = new CyclicIterator<>(
-                List.of("A", "B", "C"));
+        CyclicIterator<String> iterator = new CyclicIterator<>(List.of("A", "B", "C"));
 
         assertEquals("A", iterator.next());
         assertEquals("B", iterator.next());
@@ -36,10 +34,8 @@ class CyclicIteratorTest {
 
     @Test
     void iteratorRejectsMissingItemsAndInvalidIndex() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new CyclicIterator<>(List.of()));
-        assertThrows(IllegalArgumentException.class,
-                () -> new CyclicIterator<>(null));
+        assertThrows(IllegalArgumentException.class, () -> new CyclicIterator<>(List.of()));
+        assertThrows(IllegalArgumentException.class, () -> new CyclicIterator<>(null));
 
         CyclicIterator<String> iterator = new CyclicIterator<>(List.of("A"));
         assertThrows(IllegalArgumentException.class, () -> iterator.setIndex(-1));

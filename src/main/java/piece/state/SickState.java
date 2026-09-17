@@ -1,8 +1,8 @@
 package piece.state;
 
 /**
- * Applied when teleported to Alpha and outcome is "sick".
- * Movement halves for effectDuration rounds, then auto-transitions to NormalState.
+ * Applied when teleported to Alpha and outcome is "sick". Movement halves for effectDuration
+ * rounds, then auto-transitions to NormalState.
  */
 public class SickState implements IPieceState {
     private int roundsRemaining;

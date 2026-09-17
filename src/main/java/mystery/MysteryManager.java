@@ -2,12 +2,11 @@ package mystery;
 
 import board.Board;
 import config.GameConfig;
-import mystery.effect.*;
-import piece.Piece;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import mystery.effect.*;
+import piece.Piece;
 
 public class MysteryManager {
     private int currentPosition;
@@ -24,8 +23,7 @@ public class MysteryManager {
         this(board, random, createDefaultEffects(random));
     }
 
-    public MysteryManager(Board board, Random random,
-                          List<IMysteryEffect> effects) {
+    public MysteryManager(Board board, Random random, List<IMysteryEffect> effects) {
         this.board = board;
         this.random = random;
         this.config = GameConfig.getInstance();
@@ -103,5 +101,4 @@ public class MysteryManager {
     public boolean isActive() {
         return isActive;
     }
-
 }

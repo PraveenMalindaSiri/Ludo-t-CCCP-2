@@ -1,12 +1,11 @@
 package event;
 
-import mystery.MysteryOutcome;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
+import mystery.MysteryOutcome;
+import org.junit.jupiter.api.Test;
 
 class GameEventPublisherTest {
 
@@ -14,8 +13,7 @@ class GameEventPublisherTest {
     void registeredListenerReceivesStructuredEvents() {
         GameEventPublisher publisher = new GameEventPublisher();
         RecordingListener listener = new RecordingListener();
-        MysteryOutcome outcome = new MysteryOutcome(
-                MysteryOutcome.Type.BETA, "Beta");
+        MysteryOutcome outcome = new MysteryOutcome(MysteryOutcome.Type.BETA, "Beta");
         publisher.addListener(listener);
 
         publisher.diceRolled("YELLOW", 6);
@@ -62,21 +60,21 @@ class GameEventPublisherTest {
         original.add("RED");
 
         assertEquals(List.of("YELLOW", "BLUE"), listener.turnOrder);
-        assertThrows(UnsupportedOperationException.class,
-                () -> listener.turnOrder.add("GREEN"));
+        assertThrows(UnsupportedOperationException.class, () -> listener.turnOrder.add("GREEN"));
     }
 
     @Test
     void listenerCanRemoveItselfDuringNotification() {
         GameEventPublisher publisher = new GameEventPublisher();
         int[] calls = {0};
-        IGameEventListener selfRemoving = new IGameEventListener() {
-            @Override
-            public void onGameWon(String color) {
-                calls[0]++;
-                publisher.removeListener(this);
-            }
-        };
+        IGameEventListener selfRemoving =
+                new IGameEventListener() {
+                    @Override
+                    public void onGameWon(String color) {
+                        calls[0]++;
+                        publisher.removeListener(this);
+                    }
+                };
         publisher.addListener(selfRemoving);
 
         publisher.gameWon("GREEN");
@@ -97,8 +95,7 @@ class GameEventPublisherTest {
         }
 
         @Override
-        public void onMysteryResolved(String color, String pieceName,
-                                      MysteryOutcome outcome) {
+        public void onMysteryResolved(String color, String pieceName, MysteryOutcome outcome) {
             mysteryOutcome = outcome;
         }
 

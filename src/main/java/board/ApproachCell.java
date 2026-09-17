@@ -2,10 +2,7 @@ package board;
 
 import piece.Piece;
 
-
-/**
- * The last standard-path cell before a color's Home Straight.
- */
+/** The last standard-path cell before a color's Home Straight. */
 public class ApproachCell extends Cell {
     private final String ownerColor;
 

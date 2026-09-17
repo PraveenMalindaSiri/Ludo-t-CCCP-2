@@ -1,11 +1,10 @@
 package player;
 
 import board.Board;
+import java.util.List;
 import piece.Piece;
 import player.strategy.IPlayerStrategy;
 import rules.RuleEngine;
-
-import java.util.List;
 
 public class BluePlayer extends Player {
 
@@ -14,8 +13,8 @@ public class BluePlayer extends Player {
     }
 
     @Override
-    protected Piece choosePieceToMove(List<Piece> validMoves, int diceValue,
-                                      Board board, RuleEngine ruleEngine) {
+    protected Piece choosePieceToMove(
+            List<Piece> validMoves, int diceValue, Board board, RuleEngine ruleEngine) {
         return strategy.choosePieceToMove(validMoves, diceValue, board, ruleEngine);
     }
 }

@@ -1,16 +1,13 @@
 package engine.command;
 
-import mystery.MysteryOutcome;
-import piece.Piece;
-
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import mystery.MysteryOutcome;
+import piece.Piece;
 
-/**
- * Structured result produced by a game command.
- */
+/** Structured result produced by a game command. */
 public final class CommandResult {
     public enum Type {
         ENTER_BOARD,
@@ -39,20 +36,61 @@ public final class CommandResult {
         this.type = type;
     }
 
-    public Type getType() { return type; }
-    public List<Piece> getMovedPieces() { return new ArrayList<>(movedPieces); }
-    public List<Piece> getCapturedPieces() { return new ArrayList<>(capturedPieces); }
-    public int getFromPosition() { return fromPosition; }
-    public int getToPosition() { return toPosition; }
-    public int getMovement() { return movement; }
-    public String getDirection() { return direction; }
-    public boolean wasExecuted() { return executed; }
-    public boolean wasBlocked() { return blocked; }
-    public int getBlockedAt() { return blockedAt; }
-    public boolean movedBeforeBlock() { return movedBeforeBlock; }
-    public boolean wasMoverReturnedToBase() { return moverReturnedToBase; }
-    public MysteryOutcome getMysteryOutcome() { return mysteryOutcome; }
-    public boolean hasCaptured() { return !capturedPieces.isEmpty(); }
+    public Type getType() {
+        return type;
+    }
+
+    public List<Piece> getMovedPieces() {
+        return new ArrayList<>(movedPieces);
+    }
+
+    public List<Piece> getCapturedPieces() {
+        return new ArrayList<>(capturedPieces);
+    }
+
+    public int getFromPosition() {
+        return fromPosition;
+    }
+
+    public int getToPosition() {
+        return toPosition;
+    }
+
+    public int getMovement() {
+        return movement;
+    }
+
+    public String getDirection() {
+        return direction;
+    }
+
+    public boolean wasExecuted() {
+        return executed;
+    }
+
+    public boolean wasBlocked() {
+        return blocked;
+    }
+
+    public int getBlockedAt() {
+        return blockedAt;
+    }
+
+    public boolean movedBeforeBlock() {
+        return movedBeforeBlock;
+    }
+
+    public boolean wasMoverReturnedToBase() {
+        return moverReturnedToBase;
+    }
+
+    public MysteryOutcome getMysteryOutcome() {
+        return mysteryOutcome;
+    }
+
+    public boolean hasCaptured() {
+        return !capturedPieces.isEmpty();
+    }
 
     public void addMovedPiece(Piece piece) {
         if (piece != null && !movedPieces.contains(piece)) movedPieces.add(piece);
@@ -73,8 +111,7 @@ public final class CommandResult {
         return capturePositions.getOrDefault(piece, -1);
     }
 
-    public void setMovement(int fromPosition, int toPosition,
-                            int movement, String direction) {
+    public void setMovement(int fromPosition, int toPosition, int movement, String direction) {
         this.fromPosition = fromPosition;
         this.toPosition = toPosition;
         this.movement = movement;

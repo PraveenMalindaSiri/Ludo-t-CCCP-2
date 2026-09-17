@@ -1,7 +1,10 @@
 package rules;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import block.Block;
 import board.Board;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import piece.Piece;
@@ -9,10 +12,6 @@ import piece.state.FrozenState;
 import piece.state.SickState;
 import player.YellowPlayer;
 import support.TestSupport;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class RuleEngineTest {
     private Board board;
@@ -36,8 +35,7 @@ class RuleEngineTest {
 
     @Test
     void destinationUsesStateAndDirectionWithoutMutatingPiece() {
-        Piece piece = TestSupport.place(
-                board, "1", "YELLOW", 10, "COUNTERCLOCKWISE");
+        Piece piece = TestSupport.place(board, "1", "YELLOW", 10, "COUNTERCLOCKWISE");
         piece.setState(new SickState(4));
 
         int destination = rules.calculateDestination(piece, 5);
@@ -49,8 +47,7 @@ class RuleEngineTest {
 
     @Test
     void frozenAndHomePiecesAreNotValidMoves() {
-        Piece frozen = TestSupport.place(
-                board, "1", "YELLOW", 10, "CLOCKWISE");
+        Piece frozen = TestSupport.place(board, "1", "YELLOW", 10, "CLOCKWISE");
         frozen.setState(new FrozenState(4));
         Piece home = new Piece("2", "YELLOW");
         board.moveToHome(home);
@@ -72,17 +69,13 @@ class RuleEngineTest {
 
     @Test
     void clearAlternativeRemovesOnlyPathBlockedChoice() {
-        Piece blocked = TestSupport.place(
-                board, "1", "YELLOW", 0, "CLOCKWISE");
-        Piece clear = TestSupport.place(
-                board, "2", "YELLOW", 20, "CLOCKWISE");
-        Piece defenderOne = TestSupport.place(
-                board, "1", "RED", 3, "CLOCKWISE");
-        Piece defenderTwo = TestSupport.place(
-                board, "2", "RED", 3, "CLOCKWISE");
+        Piece blocked = TestSupport.place(board, "1", "YELLOW", 0, "CLOCKWISE");
+        Piece clear = TestSupport.place(board, "2", "YELLOW", 20, "CLOCKWISE");
+        Piece defenderOne = TestSupport.place(board, "1", "RED", 3, "CLOCKWISE");
+        Piece defenderTwo = TestSupport.place(board, "2", "RED", 3, "CLOCKWISE");
         blockHandler.createBlock(defenderOne, defenderTwo, board.getCellAt(3));
-        YellowPlayer player = new YellowPlayer(
-                List.of(blocked, clear), new TestSupport.FirstPieceStrategy(true));
+        YellowPlayer player =
+                new YellowPlayer(List.of(blocked, clear), new TestSupport.FirstPieceStrategy(true));
 
         List<Piece> valid = rules.getValidMoves(player, 4);
 
@@ -92,28 +85,24 @@ class RuleEngineTest {
 
     @Test
     void partiallyBlockedPieceRemainsOptionWhenNoClearMoveExists() {
-        Piece blocked = TestSupport.place(
-                board, "1", "YELLOW", 0, "CLOCKWISE");
-        Piece defenderOne = TestSupport.place(
-                board, "1", "RED", 3, "CLOCKWISE");
-        Piece defenderTwo = TestSupport.place(
-                board, "2", "RED", 3, "CLOCKWISE");
+        Piece blocked = TestSupport.place(board, "1", "YELLOW", 0, "CLOCKWISE");
+        Piece defenderOne = TestSupport.place(board, "1", "RED", 3, "CLOCKWISE");
+        Piece defenderTwo = TestSupport.place(board, "2", "RED", 3, "CLOCKWISE");
         blockHandler.createBlock(defenderOne, defenderTwo, board.getCellAt(3));
-        YellowPlayer player = new YellowPlayer(
-                List.of(blocked), new TestSupport.FirstPieceStrategy(true));
+        YellowPlayer player =
+                new YellowPlayer(List.of(blocked), new TestSupport.FirstPieceStrategy(true));
 
         assertEquals(List.of(blocked), rules.getValidMoves(player, 4));
     }
 
     @Test
     void nonBlockableSameColorLandingIsRejected() {
-        Piece mover = TestSupport.place(
-                board, "1", "YELLOW", 0, "CLOCKWISE");
-        Piece teammate = TestSupport.place(
-                board, "2", "YELLOW", 4, "CLOCKWISE");
+        Piece mover = TestSupport.place(board, "1", "YELLOW", 0, "CLOCKWISE");
+        Piece teammate = TestSupport.place(board, "2", "YELLOW", 4, "CLOCKWISE");
         teammate.setState(new SickState(4));
-        YellowPlayer player = new YellowPlayer(
-                List.of(mover, teammate), new TestSupport.FirstPieceStrategy(true));
+        YellowPlayer player =
+                new YellowPlayer(
+                        List.of(mover, teammate), new TestSupport.FirstPieceStrategy(true));
 
         List<Piece> valid = rules.getValidMoves(player, 4);
 
@@ -122,13 +111,11 @@ class RuleEngineTest {
 
     @Test
     void repeatedQueriesDoNotMovePiecesOrChangeBlockRegistry() {
-        Piece first = TestSupport.place(
-                board, "1", "YELLOW", 10, "CLOCKWISE");
-        Piece second = TestSupport.place(
-                board, "2", "YELLOW", 10, "CLOCKWISE");
+        Piece first = TestSupport.place(board, "1", "YELLOW", 10, "CLOCKWISE");
+        Piece second = TestSupport.place(board, "2", "YELLOW", 10, "CLOCKWISE");
         Block block = blockHandler.createBlock(first, second, board.getCellAt(10));
-        YellowPlayer player = new YellowPlayer(
-                List.of(first, second), new TestSupport.FirstPieceStrategy(true));
+        YellowPlayer player =
+                new YellowPlayer(List.of(first, second), new TestSupport.FirstPieceStrategy(true));
 
         for (int i = 0; i < 10; i++) rules.getValidMoves(player, 6);
 

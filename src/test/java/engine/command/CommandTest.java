@@ -1,7 +1,10 @@
 package engine.command;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import block.Block;
 import board.Board;
+import java.util.List;
 import mystery.MysteryManager;
 import mystery.MysteryOutcome;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,10 +14,6 @@ import rules.BlockHandler;
 import rules.CaptureHandler;
 import rules.LandingResolver;
 import support.TestSupport;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class CommandTest {
     private Board board;
@@ -27,12 +26,14 @@ class CommandTest {
         board = TestSupport.newBoard();
         captureHandler = new CaptureHandler(board);
         blockHandler = new BlockHandler(board);
-        MysteryManager mystery = new MysteryManager(
-                board, new TestSupport.SequenceRandom(0),
-                List.of((piece, gameBoard) ->
-                        new MysteryOutcome(MysteryOutcome.Type.START, "unused")));
-        resolver = new LandingResolver(
-                board, captureHandler, blockHandler, mystery);
+        MysteryManager mystery =
+                new MysteryManager(
+                        board,
+                        new TestSupport.SequenceRandom(0),
+                        List.of(
+                                (piece, gameBoard) ->
+                                        new MysteryOutcome(MysteryOutcome.Type.START, "unused")));
+        resolver = new LandingResolver(board, captureHandler, blockHandler, mystery);
     }
 
     @Test
@@ -40,9 +41,10 @@ class CommandTest {
         Piece piece = new Piece("1", "YELLOW");
         board.initializeInBase(piece);
 
-        CommandResult result = new EnterBoardCommand(
-                piece, board, new TestSupport.FixedCoinToss("HEADS"), resolver)
-                .execute();
+        CommandResult result =
+                new EnterBoardCommand(
+                                piece, board, new TestSupport.FixedCoinToss("HEADS"), resolver)
+                        .execute();
 
         assertEquals(CommandResult.Type.ENTER_BOARD, result.getType());
         assertTrue(result.wasExecuted());
@@ -57,8 +59,9 @@ class CommandTest {
         Piece piece = new Piece("1", "BLUE");
         board.initializeInBase(piece);
 
-        EnterBoardCommand command = new EnterBoardCommand(
-                piece, board, new TestSupport.FixedCoinToss("TAILS"), resolver);
+        EnterBoardCommand command =
+                new EnterBoardCommand(
+                        piece, board, new TestSupport.FixedCoinToss("TAILS"), resolver);
         command.execute();
 
         assertEquals("COUNTERCLOCKWISE", piece.getDirection());
@@ -68,11 +71,9 @@ class CommandTest {
 
     @Test
     void moveCommandProducesStructuredMovementResult() {
-        Piece piece = TestSupport.place(
-                board, "1", "YELLOW", 10, "CLOCKWISE");
+        Piece piece = TestSupport.place(board, "1", "YELLOW", 10, "CLOCKWISE");
 
-        CommandResult result = new MoveCommand(
-                piece, board, 14, 4, resolver).execute();
+        CommandResult result = new MoveCommand(piece, board, 14, 4, resolver).execute();
 
         assertEquals(CommandResult.Type.MOVE, result.getType());
         assertTrue(result.wasExecuted());
@@ -85,13 +86,10 @@ class CommandTest {
 
     @Test
     void captureCommandReportsOriginalCapturePosition() {
-        Piece capturer = TestSupport.place(
-                board, "1", "YELLOW", 8, "CLOCKWISE");
-        Piece captured = TestSupport.place(
-                board, "1", "RED", 8, "CLOCKWISE");
+        Piece capturer = TestSupport.place(board, "1", "YELLOW", 8, "CLOCKWISE");
+        Piece captured = TestSupport.place(board, "1", "RED", 8, "CLOCKWISE");
 
-        CommandResult result = new CaptureCommand(
-                capturer, captured, captureHandler).execute();
+        CommandResult result = new CaptureCommand(capturer, captured, captureHandler).execute();
 
         assertEquals(CommandResult.Type.CAPTURE, result.getType());
         assertEquals(8, result.getCapturePosition(captured));
@@ -119,9 +117,9 @@ class CommandTest {
         Block attacker = createBlock("YELLOW", 0, 2);
         Block defender = createBlock("RED", 3, 2);
 
-        CommandResult result = new BlockMoveCommand(
-                attacker, 6, board, blockHandler,
-                captureHandler, resolver).execute();
+        CommandResult result =
+                new BlockMoveCommand(attacker, 6, board, blockHandler, captureHandler, resolver)
+                        .execute();
 
         assertTrue(result.wasExecuted());
         assertFalse(result.wasBlocked());
@@ -136,9 +134,9 @@ class CommandTest {
         Block attacker = createBlock("YELLOW", 0, 2);
         Block defender = createBlock("RED", 3, 3);
 
-        CommandResult result = new BlockMoveCommand(
-                attacker, 6, board, blockHandler,
-                captureHandler, resolver).execute();
+        CommandResult result =
+                new BlockMoveCommand(attacker, 6, board, blockHandler, captureHandler, resolver)
+                        .execute();
 
         assertFalse(result.wasExecuted());
         assertTrue(result.wasBlocked());
@@ -163,15 +161,12 @@ class CommandTest {
     }
 
     private Block createBlock(String color, int position, int size) {
-        Piece first = TestSupport.place(
-                board, "1", color, position, "CLOCKWISE");
-        Piece second = TestSupport.place(
-                board, "2", color, position, "CLOCKWISE");
-        Block block = blockHandler.createBlock(
-                first, second, board.getCellAt(position));
+        Piece first = TestSupport.place(board, "1", color, position, "CLOCKWISE");
+        Piece second = TestSupport.place(board, "2", color, position, "CLOCKWISE");
+        Block block = blockHandler.createBlock(first, second, board.getCellAt(position));
         for (int index = 3; index <= size; index++) {
-            Piece extra = TestSupport.place(
-                    board, String.valueOf(index), color, position, "CLOCKWISE");
+            Piece extra =
+                    TestSupport.place(board, String.valueOf(index), color, position, "CLOCKWISE");
             blockHandler.addToBlock(extra, block, board.getCellAt(position));
         }
         return block;

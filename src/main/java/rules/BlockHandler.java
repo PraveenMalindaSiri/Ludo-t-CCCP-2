@@ -4,13 +4,12 @@ import block.Block;
 import board.Board;
 import board.Cell;
 import config.GameConfig;
-import piece.Piece;
-import player.Player;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import piece.Piece;
+import player.Player;
 
 /***
  * Handles all block-related logic.
@@ -39,7 +38,8 @@ public class BlockHandler {
                 && piece.canJoinBlock();
     }
 
-    // Block detection ------------------------------------------------------------------------------------
+    // Block detection
+    // ------------------------------------------------------------------------------------
 
     public boolean isBlockedByOpponent(Piece movingPiece, int destination) {
         if (movingPiece == null) return false;
@@ -60,8 +60,7 @@ public class BlockHandler {
     public boolean isSameColorBlock(Piece piece, Cell cell) {
         List<Piece> piecesOnCell = cell.getPieces();
         if (piecesOnCell.size() < 2) return false;
-        return piecesOnCell.stream()
-                .allMatch(p -> p.getColor().equalsIgnoreCase(piece.getColor()));
+        return piecesOnCell.stream().allMatch(p -> p.getColor().equalsIgnoreCase(piece.getColor()));
     }
 
     public Block findBlockAt(Cell cell) {
@@ -69,7 +68,8 @@ public class BlockHandler {
         return isConsistentBlock(block) ? block : null;
     }
 
-    // Block creation ----------------------------------------------------------------------------------------
+    // Block creation
+    // ----------------------------------------------------------------------------------------
 
     public Block createBlock(Piece newPiece, Piece existingPiece, Cell cell) {
         if (!canBeInBlock(newPiece) || !canBeInBlock(existingPiece)) return null;
@@ -84,8 +84,8 @@ public class BlockHandler {
     public void addToBlock(Piece piece, Block block, Cell cell) {
         if (!canBeInBlock(piece) || block == null || block.getCell() != cell) return;
         if (!block.getPieces().isEmpty()
-                && !block.getPieces().getFirst().getColor()
-                .equalsIgnoreCase(piece.getColor())) return;
+                && !block.getPieces().getFirst().getColor().equalsIgnoreCase(piece.getColor()))
+            return;
 
         block.addPiece(piece);
         activeBlocks.put(cell.getPosition(), block);
@@ -127,7 +127,8 @@ public class BlockHandler {
         activeBlocks.put(cell.getPosition(), block);
     }
 
-    // Block movement ----------------------------------------------------------------------------------------
+    // Block movement
+    // ----------------------------------------------------------------------------------------
 
     public void moveBlock(Block block, int diceValue) {
         if (!isConsistentBlock(block)) return;
@@ -175,9 +176,10 @@ public class BlockHandler {
         Piece representative = block.getPieces().getFirst();
 
         for (int step = 1; step <= movementPerPiece; step++) {
-            int checkPos = "CLOCKWISE".equals(direction)
-                    ? (current + step) % count
-                    : (current - step + count) % count;
+            int checkPos =
+                    "CLOCKWISE".equals(direction)
+                            ? (current + step) % count
+                            : (current - step + count) % count;
 
             if (isBlockedByOpponent(representative, checkPos)) {
                 return checkPos;
@@ -236,12 +238,11 @@ public class BlockHandler {
 
             int newPos;
             if ("CLOCKWISE".equals(originalDir)) {
-                newPos = (piece.getPosition() + sides)
-                        % config.getStandardCellCount();
+                newPos = (piece.getPosition() + sides) % config.getStandardCellCount();
             } else {
-                newPos = (piece.getPosition() - sides
-                        + config.getStandardCellCount())
-                        % config.getStandardCellCount();
+                newPos =
+                        (piece.getPosition() - sides + config.getStandardCellCount())
+                                % config.getStandardCellCount();
             }
 
             board.moveOnStandardPath(piece, sides, newPos);
@@ -251,7 +252,8 @@ public class BlockHandler {
         return movedPieces;
     }
 
-    // Block Capture --------------------------------------------------------------------------------------------------
+    // Block Capture
+    // --------------------------------------------------------------------------------------------------
 
     public boolean canBlockCaptureBlock(Block attackingBlock, Block defendingBlock) {
         if (attackingBlock == null || defendingBlock == null) return false;
@@ -295,7 +297,8 @@ public class BlockHandler {
         return -1;
     }
 
-    // Helpers --------------------------------------------------------------------------------------------------
+    // Helpers
+    // --------------------------------------------------------------------------------------------------
 
     public Map<Integer, Block> getActiveBlocks() {
         return new HashMap<>(activeBlocks);
@@ -308,9 +311,10 @@ public class BlockHandler {
         int count = config.getStandardCellCount();
 
         for (int step = 1; step <= effective; step++) {
-            int checkPos = "CLOCKWISE".equals(piece.getDirection())
-                    ? (current + step) % count
-                    : (current - step + count) % count;
+            int checkPos =
+                    "CLOCKWISE".equals(piece.getDirection())
+                            ? (current + step) % count
+                            : (current - step + count) % count;
 
             if (isBlockedByOpponent(piece, checkPos)) {
                 return checkPos;
@@ -322,8 +326,10 @@ public class BlockHandler {
     private Block findPlayerBlock(Player player) {
         for (Block block : activeBlocks.values()) {
             if (!block.getPieces().isEmpty()
-                    && block.getPieces().getFirst().getColor()
-                    .equalsIgnoreCase(player.getColor())) {
+                    && block.getPieces()
+                            .getFirst()
+                            .getColor()
+                            .equalsIgnoreCase(player.getColor())) {
                 return block;
             }
         }
@@ -350,8 +356,7 @@ public class BlockHandler {
 
         int distance = distanceFromApproach(piece);
 
-        if ("COUNTERCLOCKWISE".equals(piece.getDirection())
-                && !piece.getHasPassedApproachOnce()) {
+        if ("COUNTERCLOCKWISE".equals(piece.getDirection()) && !piece.getHasPassedApproachOnce()) {
             distance += config.getStandardCellCount();
         }
 
@@ -364,8 +369,7 @@ public class BlockHandler {
     }
 
     public boolean canBlockMove(Block block, int diceValue) {
-        return isConsistentBlock(block)
-                && getBlockMovementAmount(block, diceValue) > 0;
+        return isConsistentBlock(block) && getBlockMovementAmount(block, diceValue) > 0;
     }
 
     private boolean isConsistentBlock(Block block) {
@@ -378,8 +382,7 @@ public class BlockHandler {
         for (Piece piece : block.getPieces()) {
             boolean stillInThisCell = cell.getPieces().contains(piece);
             boolean samePosition = piece.getPosition() == cell.getPosition();
-            if (!stillInThisCell || !samePosition || !canBeInBlock(piece)
-                    || !piece.isInBlock()) {
+            if (!stillInThisCell || !samePosition || !canBeInBlock(piece) || !piece.isInBlock()) {
                 return false;
             }
             if (color == null) {
@@ -394,5 +397,4 @@ public class BlockHandler {
     public void removeFromBlockIfNeeded(Piece piece) {
         piece.setInBlock(false);
     }
-
 }

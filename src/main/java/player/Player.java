@@ -1,12 +1,11 @@
 package player;
 
 import board.Board;
+import java.util.ArrayList;
+import java.util.List;
 import piece.Piece;
 import player.strategy.IPlayerStrategy;
 import rules.RuleEngine;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public abstract class Player {
     protected final String color;
@@ -15,8 +14,7 @@ public abstract class Player {
     protected final IPlayerStrategy strategy;
     protected int consecutiveSixes;
 
-    protected Player(String color, String name,
-                     List<Piece> pieces, IPlayerStrategy strategy) {
+    protected Player(String color, String name, List<Piece> pieces, IPlayerStrategy strategy) {
         this.color = color;
         this.name = name;
         this.pieces = new ArrayList<>(pieces);
@@ -24,8 +22,8 @@ public abstract class Player {
         this.consecutiveSixes = 0;
     }
 
-    public final Piece selectMove(List<Piece> validMoves, int diceValue,
-                                  Board board, RuleEngine ruleEngine) {
+    public final Piece selectMove(
+            List<Piece> validMoves, int diceValue, Board board, RuleEngine ruleEngine) {
         if (validMoves.isEmpty()) return null;
         return choosePieceToMove(validMoves, diceValue, board, ruleEngine);
     }
@@ -36,11 +34,11 @@ public abstract class Player {
 
     // each child has different ways to exit the base
     public boolean shouldMoveFromBase(int diceValue, Board board, RuleEngine ruleEngine) {
-        return strategy.shouldMoveFromBase(
-                new ArrayList<>(pieces), diceValue, board, ruleEngine);
+        return strategy.shouldMoveFromBase(new ArrayList<>(pieces), diceValue, board, ruleEngine);
     }
 
-    // Queries ------------------------------------------------------------------------------------------
+    // Queries
+    // ------------------------------------------------------------------------------------------
 
     public List<Piece> getPieces() {
         return new ArrayList<>(pieces);

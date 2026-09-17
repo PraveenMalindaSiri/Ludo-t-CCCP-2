@@ -1,7 +1,10 @@
 package factory;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import board.Board;
 import engine.GameEngine;
+import java.util.List;
 import mystery.MysteryManager;
 import org.junit.jupiter.api.Test;
 import piece.Piece;
@@ -14,10 +17,6 @@ import rules.BlockHandler;
 import rules.CaptureHandler;
 import support.TestSupport;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 class FactoryTest {
 
     @Test
@@ -25,26 +24,24 @@ class FactoryTest {
         Board board = BoardFactory.createBoard();
         CaptureHandler capture = new CaptureHandler(board);
         BlockHandler block = new BlockHandler(board);
-        MysteryManager mystery = new MysteryManager(
-                board, new TestSupport.SequenceRandom(0),
-                List.of((piece, gameBoard) -> null));
+        MysteryManager mystery =
+                new MysteryManager(
+                        board,
+                        new TestSupport.SequenceRandom(0),
+                        List.of((piece, gameBoard) -> null));
 
-        Player yellow = PlayerFactory.createPlayer(
-                "yellow", capture, block, mystery);
-        Player blue = PlayerFactory.createPlayer(
-                "BLUE", capture, block, mystery);
-        Player red = PlayerFactory.createPlayer(
-                "RED", capture, block, mystery);
-        Player green = PlayerFactory.createPlayer(
-                "GREEN", capture, block, mystery);
+        Player yellow = PlayerFactory.createPlayer("yellow", capture, block, mystery);
+        Player blue = PlayerFactory.createPlayer("BLUE", capture, block, mystery);
+        Player red = PlayerFactory.createPlayer("RED", capture, block, mystery);
+        Player green = PlayerFactory.createPlayer("GREEN", capture, block, mystery);
 
         assertTrue(yellow instanceof YellowPlayer);
         assertTrue(blue instanceof BluePlayer);
         assertTrue(red instanceof RedPlayer);
         assertTrue(green instanceof GreenPlayer);
         assertEquals(4, yellow.getPieces().size());
-        assertTrue(yellow.getPieces().stream()
-                .allMatch(piece -> piece.getColor().equals("YELLOW")));
+        assertTrue(
+                yellow.getPieces().stream().allMatch(piece -> piece.getColor().equals("YELLOW")));
     }
 
     @Test
@@ -52,13 +49,15 @@ class FactoryTest {
         Board board = BoardFactory.createBoard();
         CaptureHandler capture = new CaptureHandler(board);
         BlockHandler block = new BlockHandler(board);
-        MysteryManager mystery = new MysteryManager(
-                board, new TestSupport.SequenceRandom(0),
-                List.of((piece, gameBoard) -> null));
+        MysteryManager mystery =
+                new MysteryManager(
+                        board,
+                        new TestSupport.SequenceRandom(0),
+                        List.of((piece, gameBoard) -> null));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> PlayerFactory.createPlayer(
-                        "PURPLE", capture, block, mystery));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PlayerFactory.createPlayer("PURPLE", capture, block, mystery));
     }
 
     @Test
@@ -74,9 +73,10 @@ class FactoryTest {
         assertEquals(0, second.getRoundCount());
         assertNotSame(first.getSnapshot(), second.getSnapshot());
         assertEquals(4, second.getSnapshot().getPlayers().size());
-        assertTrue(second.getSnapshot().getPlayers().stream()
-                .flatMap(player -> player.getPieces().stream())
-                .allMatch(piece -> piece.getPosition().equals("Base")));
+        assertTrue(
+                second.getSnapshot().getPlayers().stream()
+                        .flatMap(player -> player.getPieces().stream())
+                        .allMatch(piece -> piece.getPosition().equals("Base")));
     }
 
     @Test

@@ -3,8 +3,8 @@ package board;
 import piece.Piece;
 
 /**
- * One of the 5 color-specific cells in a player's Home Straight.
- * Only pieces matching the owner color may enter.
+ * One of the 5 color-specific cells in a player's Home Straight. Only pieces matching the owner
+ * color may enter.
  */
 public class HomeStraightCell extends Cell {
     private final String ownerColor;
@@ -33,5 +33,4 @@ public class HomeStraightCell extends Cell {
     public String toString() {
         return ownerColor + "homepath" + index;
     }
-
 }

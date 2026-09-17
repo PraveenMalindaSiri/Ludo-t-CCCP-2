@@ -1,14 +1,11 @@
 package engine;
 
+import java.util.ArrayList;
+import java.util.List;
 import player.Player;
 import util.CyclicIterator;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Manages turn order and round counting.
- */
+/** Manages turn order and round counting. */
 public class TurnManager {
     private final List<Player> players;
     private final CyclicIterator<Player> playerIterator;
@@ -20,7 +17,8 @@ public class TurnManager {
         this.roundCount = 0;
     }
 
-    // Turn controlling --------------------------------------------------------------------------------------------------
+    // Turn controlling
+    // --------------------------------------------------------------------------------------------------
 
     public Player getNextPlayer() {
         return playerIterator.next();
@@ -34,7 +32,8 @@ public class TurnManager {
         playerIterator.setIndex(index);
     }
 
-    // Round controlling --------------------------------------------------------------------------------------------------
+    // Round controlling
+    // --------------------------------------------------------------------------------------------------
 
     public void incrementRound() {
         roundCount++;
@@ -44,7 +43,8 @@ public class TurnManager {
         return roundCount;
     }
 
-    // Player info --------------------------------------------------------------------------------------------------
+    // Player info
+    // --------------------------------------------------------------------------------------------------
 
     public List<Player> getPlayers() {
         return new ArrayList<>(players);
@@ -53,5 +53,4 @@ public class TurnManager {
     public int getIndexOf(Player player) {
         return players.indexOf(player);
     }
-
 }

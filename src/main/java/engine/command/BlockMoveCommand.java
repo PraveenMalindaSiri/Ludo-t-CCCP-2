@@ -2,17 +2,14 @@ package engine.command;
 
 import block.Block;
 import board.Board;
+import java.util.ArrayList;
+import java.util.List;
 import piece.Piece;
 import rules.BlockHandler;
 import rules.CaptureHandler;
 import rules.LandingResolver;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Executes one complete block movement through the existing block component.
- */
+/** Executes one complete block movement through the existing block component. */
 public final class BlockMoveCommand implements ICommand {
     private final Block block;
     private final int diceValue;
@@ -21,10 +18,13 @@ public final class BlockMoveCommand implements ICommand {
     private final CaptureHandler captureHandler;
     private final LandingResolver landingResolver;
 
-    public BlockMoveCommand(Block block, int diceValue, Board board,
-                            BlockHandler blockHandler,
-                            CaptureHandler captureHandler,
-                            LandingResolver landingResolver) {
+    public BlockMoveCommand(
+            Block block,
+            int diceValue,
+            Board board,
+            BlockHandler blockHandler,
+            CaptureHandler captureHandler,
+            LandingResolver landingResolver) {
         this.block = block;
         this.diceValue = diceValue;
         this.board = board;
@@ -65,8 +65,8 @@ public final class BlockMoveCommand implements ICommand {
                 result.addCapturedPiece(captured, destination);
             }
         } else {
-            singleTarget = captureHandler.getCapturedPieceAt(
-                    destination, representative.getColor());
+            singleTarget =
+                    captureHandler.getCapturedPieceAt(destination, representative.getColor());
         }
 
         int movement = blockHandler.getBlockMovementAmount(block, diceValue);
@@ -81,8 +81,7 @@ public final class BlockMoveCommand implements ICommand {
             CommandResult capture =
                     new CaptureCommand(representative, singleTarget, captureHandler).execute();
             for (Piece captured : capture.getCapturedPieces()) {
-                result.addCapturedPiece(
-                        captured, capture.getCapturePosition(captured));
+                result.addCapturedPiece(captured, capture.getCapturePosition(captured));
             }
             for (Piece member : block.getPieces()) {
                 if (member != representative) member.incrementCaptureCount();

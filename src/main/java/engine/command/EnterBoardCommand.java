@@ -5,9 +5,7 @@ import dice.ICoinToss;
 import piece.Piece;
 import rules.LandingResolver;
 
-/**
- * moving a piece from base to its starting cell (X).
- */
+/** moving a piece from base to its starting cell (X). */
 public class EnterBoardCommand implements ICommand {
     private final Piece piece;
     private final Board board;
@@ -15,9 +13,8 @@ public class EnterBoardCommand implements ICommand {
     private final LandingResolver landingResolver;
     private String resultDirection;
 
-    public EnterBoardCommand(Piece piece, Board board,
-                             ICoinToss coinToss,
-                             LandingResolver landingResolver) {
+    public EnterBoardCommand(
+            Piece piece, Board board, ICoinToss coinToss, LandingResolver landingResolver) {
         this.piece = piece;
         this.board = board;
         this.coinToss = coinToss;
@@ -31,9 +28,7 @@ public class EnterBoardCommand implements ICommand {
 
         // Coin toss determines direction
         String tossResult = coinToss.toss();
-        resultDirection = "HEADS".equals(tossResult)
-                ? "CLOCKWISE"
-                : "COUNTERCLOCKWISE";
+        resultDirection = "HEADS".equals(tossResult) ? "CLOCKWISE" : "COUNTERCLOCKWISE";
 
         piece.setDirection(resultDirection);
         piece.setOriginalDirection(resultDirection);

@@ -1,48 +1,36 @@
 package factory;
 
 import config.GameConfig;
+import java.util.ArrayList;
+import java.util.List;
 import mystery.MysteryManager;
 import piece.Piece;
 import player.*;
 import player.strategy.*;
 import rules.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Creates completed player with pieces and strategies.
- */
+/** Creates completed player with pieces and strategies. */
 public class PlayerFactory {
-    private PlayerFactory() {
-    }
+    private PlayerFactory() {}
 
-    public static Player createPlayer(String color,
-                                      CaptureHandler captureHandler,
-                                      BlockHandler blockHandler,
-                                      MysteryManager mysteryManager) {
+    public static Player createPlayer(
+            String color,
+            CaptureHandler captureHandler,
+            BlockHandler blockHandler,
+            MysteryManager mysteryManager) {
         List<Piece> pieces = createPieces(color);
 
         switch (color.toUpperCase()) {
             case "RED":
-                return new RedPlayer(
-                        pieces,
-                        new AggressiveStrategy(captureHandler, blockHandler));
+                return new RedPlayer(pieces, new AggressiveStrategy(captureHandler, blockHandler));
             case "GREEN":
-                return new GreenPlayer(
-                        pieces,
-                        new BlockStrategy(blockHandler));
+                return new GreenPlayer(pieces, new BlockStrategy(blockHandler));
             case "YELLOW":
-                return new YellowPlayer(
-                        pieces,
-                        new WinStrategy(captureHandler, blockHandler));
+                return new YellowPlayer(pieces, new WinStrategy(captureHandler, blockHandler));
             case "BLUE":
-                return new BluePlayer(
-                        pieces,
-                        new RandomStrategy(pieces, mysteryManager));
+                return new BluePlayer(pieces, new RandomStrategy(pieces, mysteryManager));
             default:
-                throw new IllegalArgumentException(
-                        "Unknown player color: " + color);
+                throw new IllegalArgumentException("Unknown player color: " + color);
         }
     }
 

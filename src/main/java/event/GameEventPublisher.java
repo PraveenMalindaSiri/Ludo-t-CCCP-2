@@ -1,14 +1,12 @@
 package event;
 
-import mystery.MysteryOutcome;
-
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import mystery.MysteryOutcome;
 
 /** Subject/publisher participant for the existing Observer pattern. */
 public final class GameEventPublisher {
-    private final List<IGameEventListener> listeners =
-            new CopyOnWriteArrayList<>();
+    private final List<IGameEventListener> listeners = new CopyOnWriteArrayList<>();
 
     public void addListener(IGameEventListener listener) {
         if (listener != null && !listeners.contains(listener)) listeners.add(listener);
@@ -40,25 +38,28 @@ public final class GameEventPublisher {
         for (IGameEventListener listener : listeners) listener.onTurnOrder(copy);
     }
 
-    public void pieceEnteredBoard(String color, String name,
-                                  int boardCount, int baseCount) {
+    public void pieceEnteredBoard(String color, String name, int boardCount, int baseCount) {
         for (IGameEventListener listener : listeners) {
             listener.onPieceEnteredBoard(color, name, boardCount, baseCount);
         }
     }
 
-    public void pieceMoved(String color, String name, int from, int to,
-                           int value, String direction) {
+    public void pieceMoved(
+            String color, String name, int from, int to, int value, String direction) {
         for (IGameEventListener listener : listeners) {
             listener.onPieceMoved(color, name, from, to, value, direction);
         }
     }
 
-    public void pieceBlocked(String color, String name, int from, int to,
-                             String blockingColor, String blockingName) {
+    public void pieceBlocked(
+            String color,
+            String name,
+            int from,
+            int to,
+            String blockingColor,
+            String blockingName) {
         for (IGameEventListener listener : listeners) {
-            listener.onPieceBlocked(color, name, from, to,
-                    blockingColor, blockingName);
+            listener.onPieceBlocked(color, name, from, to, blockingColor, blockingName);
         }
     }
 
@@ -72,18 +73,27 @@ public final class GameEventPublisher {
         }
     }
 
-    public void pieceCaptured(String capturerColor, String capturerName,
-                              int cell, String capturedColor,
-                              String capturedName, int boardCount,
-                              int baseCount) {
+    public void pieceCaptured(
+            String capturerColor,
+            String capturerName,
+            int cell,
+            String capturedColor,
+            String capturedName,
+            int boardCount,
+            int baseCount) {
         for (IGameEventListener listener : listeners) {
-            listener.onPieceCaptured(capturerColor, capturerName, cell,
-                    capturedColor, capturedName, boardCount, baseCount);
+            listener.onPieceCaptured(
+                    capturerColor,
+                    capturerName,
+                    cell,
+                    capturedColor,
+                    capturedName,
+                    boardCount,
+                    baseCount);
         }
     }
 
-    public void mysteryResolved(String color, String name,
-                                MysteryOutcome outcome) {
+    public void mysteryResolved(String color, String name, MysteryOutcome outcome) {
         for (IGameEventListener listener : listeners) {
             listener.onMysteryResolved(color, name, outcome);
         }

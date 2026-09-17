@@ -1,18 +1,13 @@
 package block;
 
+import java.util.List;
 import piece.Piece;
 
-import java.util.List;
-
 public interface ICapturable {
-    /**
-     * Resets the piece back to base, clearing all state.
-     */
+    /** Resets the piece back to base, clearing all state. */
     void capture();
 
-    /**
-     * Clears direction, capture count, effects, and approach flags.
-     */
+    /** Clears direction, capture count, effects, and approach flags. */
     void resetState();
 
     String getColor();

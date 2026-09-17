@@ -1,5 +1,8 @@
 package engine;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import piece.Piece;
 import player.BluePlayer;
@@ -7,20 +10,17 @@ import player.Player;
 import player.YellowPlayer;
 import support.TestSupport;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 class TurnManagerTest {
 
     @Test
     void managerCyclesPlayersFromSelectedStartingIndex() {
-        Player yellow = new YellowPlayer(
-                List.of(new Piece("1", "YELLOW")),
-                new TestSupport.FirstPieceStrategy(true));
-        Player blue = new BluePlayer(
-                List.of(new Piece("1", "BLUE")),
-                new TestSupport.FirstPieceStrategy(true));
+        Player yellow =
+                new YellowPlayer(
+                        List.of(new Piece("1", "YELLOW")),
+                        new TestSupport.FirstPieceStrategy(true));
+        Player blue =
+                new BluePlayer(
+                        List.of(new Piece("1", "BLUE")), new TestSupport.FirstPieceStrategy(true));
         TurnManager manager = new TurnManager(List.of(yellow, blue));
 
         manager.setPlayerOrder(1);
@@ -34,9 +34,10 @@ class TurnManagerTest {
 
     @Test
     void managerReturnsDefensivePlayerList() {
-        Player yellow = new YellowPlayer(
-                List.of(new Piece("1", "YELLOW")),
-                new TestSupport.FirstPieceStrategy(true));
+        Player yellow =
+                new YellowPlayer(
+                        List.of(new Piece("1", "YELLOW")),
+                        new TestSupport.FirstPieceStrategy(true));
         TurnManager manager = new TurnManager(List.of(yellow));
 
         manager.getPlayers().clear();

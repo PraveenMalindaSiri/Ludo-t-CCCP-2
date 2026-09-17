@@ -2,9 +2,7 @@ package board;
 
 import piece.Piece;
 
-/**
- * The 'X' cell
- **/
+/** The 'X' cell */
 public class StartingCell extends Cell {
     private final String ownerColor;
 

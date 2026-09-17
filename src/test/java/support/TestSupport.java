@@ -4,6 +4,8 @@ import board.Board;
 import dice.ICoinToss;
 import dice.IDice;
 import factory.BoardFactory;
+import java.util.List;
+import java.util.Random;
 import mystery.MysteryManager;
 import mystery.effect.StartEffect;
 import piece.Piece;
@@ -13,18 +15,15 @@ import rules.CaptureHandler;
 import rules.LandingResolver;
 import rules.RuleEngine;
 
-import java.util.List;
-import java.util.Random;
-
 public final class TestSupport {
-    private TestSupport() { }
+    private TestSupport() {}
 
     public static Board newBoard() {
         return BoardFactory.createBoard();
     }
 
-    public static Piece place(Board board, String name, String color,
-                              int position, String direction) {
+    public static Piece place(
+            Board board, String name, String color, int position, String direction) {
         Piece piece = new Piece(name, color);
         piece.setDirection(direction);
         piece.setOriginalDirection(direction);
@@ -36,12 +35,12 @@ public final class TestSupport {
         CaptureHandler captureHandler = new CaptureHandler(board);
         BlockHandler blockHandler = new BlockHandler(board);
         RuleEngine ruleEngine = new RuleEngine(board, blockHandler);
-        MysteryManager mysteryManager = new MysteryManager(
-                board, new Random(17), List.of(new StartEffect()));
-        LandingResolver landingResolver = new LandingResolver(
-                board, captureHandler, blockHandler, mysteryManager);
-        return new RuleComponents(captureHandler, blockHandler,
-                ruleEngine, mysteryManager, landingResolver);
+        MysteryManager mysteryManager =
+                new MysteryManager(board, new Random(17), List.of(new StartEffect()));
+        LandingResolver landingResolver =
+                new LandingResolver(board, captureHandler, blockHandler, mysteryManager);
+        return new RuleComponents(
+                captureHandler, blockHandler, ruleEngine, mysteryManager, landingResolver);
     }
 
     public static final class RuleComponents {
@@ -51,11 +50,12 @@ public final class TestSupport {
         public final MysteryManager mysteryManager;
         public final LandingResolver landingResolver;
 
-        private RuleComponents(CaptureHandler captureHandler,
-                               BlockHandler blockHandler,
-                               RuleEngine ruleEngine,
-                               MysteryManager mysteryManager,
-                               LandingResolver landingResolver) {
+        private RuleComponents(
+                CaptureHandler captureHandler,
+                BlockHandler blockHandler,
+                RuleEngine ruleEngine,
+                MysteryManager mysteryManager,
+                LandingResolver landingResolver) {
             this.captureHandler = captureHandler;
             this.blockHandler = blockHandler;
             this.ruleEngine = ruleEngine;
@@ -139,15 +139,15 @@ public final class TestSupport {
         }
 
         @Override
-        public Piece choosePieceToMove(List<Piece> validPieces, int diceValue,
-                                       Board board, RuleEngine ruleEngine) {
+        public Piece choosePieceToMove(
+                List<Piece> validPieces, int diceValue, Board board, RuleEngine ruleEngine) {
             chooseCalls++;
             return validPieces.isEmpty() ? null : validPieces.getFirst();
         }
 
         @Override
-        public boolean shouldMoveFromBase(List<Piece> pieces, int diceValue,
-                                          Board board, RuleEngine ruleEngine) {
+        public boolean shouldMoveFromBase(
+                List<Piece> pieces, int diceValue, Board board, RuleEngine ruleEngine) {
             baseDecisionCalls++;
             return moveFromBase;
         }

@@ -3,13 +3,10 @@ package piece;
 import block.ICapturable;
 import block.IMovable;
 import config.GameConfig;
+import java.util.List;
 import piece.state.*;
 
-import java.util.List;
-
-/**
- * Represents one game piece belonging to a player.
- */
+/** Represents one game piece belonging to a player. */
 public class Piece implements IMovable, ICapturable {
     public static final int HOME_STRAIGHT_OFFSET = 100;
     public static final int BASE_POSITION = -2;
@@ -23,7 +20,7 @@ public class Piece implements IMovable, ICapturable {
     private boolean atHome;
     private boolean inBase;
 
-    private String direction;         // "CLOCKWISE" or "COUNTERCLOCKWISE"
+    private String direction; // "CLOCKWISE" or "COUNTERCLOCKWISE"
     private String originalDirection; // set when enters X
 
     private int captureCount;
@@ -78,7 +75,8 @@ public class Piece implements IMovable, ICapturable {
         return color;
     }
 
-    // state -------------------------------------------------------------------------------------------
+    // state
+    // -------------------------------------------------------------------------------------------
     public int getEffectiveMovement(int diceValue) {
         return currentState.calculateMovement(diceValue);
     }
@@ -115,7 +113,8 @@ public class Piece implements IMovable, ICapturable {
         currentState = currentState.onTeleportHandled();
     }
 
-    // Position helpers -------------------------------------------------------------------------------------------
+    // Position helpers
+    // -------------------------------------------------------------------------------------------
 
     public void moveToBase() {
         resetToBase();
@@ -153,11 +152,11 @@ public class Piece implements IMovable, ICapturable {
 
     public boolean isInHomeStraight() {
         return position >= HOME_STRAIGHT_OFFSET
-                && position < HOME_STRAIGHT_OFFSET
-                + GameConfig.getInstance().getHomePathLength();
+                && position < HOME_STRAIGHT_OFFSET + GameConfig.getInstance().getHomePathLength();
     }
 
-    // Status -------------------------------------------------------------------------------------------
+    // Status
+    // -------------------------------------------------------------------------------------------
 
     public boolean isOnBoard() {
         return onBoard;
@@ -179,7 +178,8 @@ public class Piece implements IMovable, ICapturable {
         this.currentState = new NormalState();
     }
 
-    // Directions -------------------------------------------------------------------------------------------
+    // Directions
+    // -------------------------------------------------------------------------------------------
 
     public void setDirection(String direction) {
         this.direction = direction;
@@ -193,7 +193,8 @@ public class Piece implements IMovable, ICapturable {
         this.originalDirection = originalDirection;
     }
 
-    // Capture info -------------------------------------------------------------------------------------------
+    // Capture info
+    // -------------------------------------------------------------------------------------------
 
     public void incrementCaptureCount() {
         captureCount++;
@@ -203,7 +204,8 @@ public class Piece implements IMovable, ICapturable {
         return captureCount;
     }
 
-    // Approach info -------------------------------------------------------------------------------------------
+    // Approach info
+    // -------------------------------------------------------------------------------------------
 
     public boolean getHasPassedApproachOnce() {
         return hasPassedApproachOnce;
@@ -213,7 +215,8 @@ public class Piece implements IMovable, ICapturable {
         this.hasPassedApproachOnce = value;
     }
 
-    // Block info -------------------------------------------------------------------------------------------
+    // Block info
+    // -------------------------------------------------------------------------------------------
 
     public boolean isInBlock() {
         return inBlock;
@@ -223,7 +226,8 @@ public class Piece implements IMovable, ICapturable {
         this.inBlock = inBlock;
     }
 
-    // others -------------------------------------------------------------------------------------------
+    // others
+    // -------------------------------------------------------------------------------------------
 
     public String getName() {
         return name;

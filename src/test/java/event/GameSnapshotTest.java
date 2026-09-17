@@ -1,6 +1,9 @@
 package event;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import board.Board;
+import java.util.List;
 import mystery.MysteryManager;
 import mystery.MysteryOutcome;
 import org.junit.jupiter.api.Test;
@@ -8,25 +11,23 @@ import piece.Piece;
 import player.YellowPlayer;
 import support.TestSupport;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 class GameSnapshotTest {
 
     @Test
     void snapshotContainsPresentationSafePlayerAndPieceViews() {
         Board board = TestSupport.newBoard();
-        Piece first = TestSupport.place(
-                board, "1", "YELLOW", 7, "CLOCKWISE");
+        Piece first = TestSupport.place(board, "1", "YELLOW", 7, "CLOCKWISE");
         Piece second = new Piece("2", "YELLOW");
         board.initializeInBase(second);
-        YellowPlayer player = new YellowPlayer(
-                List.of(first, second), new TestSupport.FirstPieceStrategy(true));
-        MysteryManager mystery = new MysteryManager(
-                board, new TestSupport.SequenceRandom(0),
-                List.of((piece, gameBoard) ->
-                        new MysteryOutcome(MysteryOutcome.Type.START, "unused")));
+        YellowPlayer player =
+                new YellowPlayer(List.of(first, second), new TestSupport.FirstPieceStrategy(true));
+        MysteryManager mystery =
+                new MysteryManager(
+                        board,
+                        new TestSupport.SequenceRandom(0),
+                        List.of(
+                                (piece, gameBoard) ->
+                                        new MysteryOutcome(MysteryOutcome.Type.START, "unused")));
 
         GameSnapshot snapshot = GameSnapshot.from(3, List.of(player), mystery);
         GameSnapshot.PlayerView view = snapshot.getPlayers().getFirst();
@@ -42,20 +43,19 @@ class GameSnapshotTest {
     @Test
     void snapshotDoesNotChangeWhenDomainObjectsLaterChange() {
         Board board = TestSupport.newBoard();
-        Piece piece = TestSupport.place(
-                board, "1", "YELLOW", 7, "CLOCKWISE");
-        YellowPlayer player = new YellowPlayer(
-                List.of(piece), new TestSupport.FirstPieceStrategy(true));
-        MysteryManager mystery = new MysteryManager(
-                board, new TestSupport.SequenceRandom(0),
-                List.of((p, b) ->
-                        new MysteryOutcome(MysteryOutcome.Type.START, "unused")));
+        Piece piece = TestSupport.place(board, "1", "YELLOW", 7, "CLOCKWISE");
+        YellowPlayer player =
+                new YellowPlayer(List.of(piece), new TestSupport.FirstPieceStrategy(true));
+        MysteryManager mystery =
+                new MysteryManager(
+                        board,
+                        new TestSupport.SequenceRandom(0),
+                        List.of((p, b) -> new MysteryOutcome(MysteryOutcome.Type.START, "unused")));
         GameSnapshot snapshot = GameSnapshot.from(0, List.of(player), mystery);
 
         board.teleportToStandardPath(piece, 20);
 
-        assertEquals("7", snapshot.getPlayers().getFirst()
-                .getPieces().getFirst().getPosition());
+        assertEquals("7", snapshot.getPlayers().getFirst().getPieces().getFirst().getPosition());
         assertEquals("20", piece.positionLabel());
     }
 
@@ -63,17 +63,18 @@ class GameSnapshotTest {
     void snapshotCollectionsAreUnmodifiable() {
         Board board = TestSupport.newBoard();
         Piece piece = new Piece("1", "YELLOW");
-        YellowPlayer player = new YellowPlayer(
-                List.of(piece), new TestSupport.FirstPieceStrategy(true));
-        MysteryManager mystery = new MysteryManager(
-                board, new TestSupport.SequenceRandom(0),
-                List.of((p, b) ->
-                        new MysteryOutcome(MysteryOutcome.Type.START, "unused")));
+        YellowPlayer player =
+                new YellowPlayer(List.of(piece), new TestSupport.FirstPieceStrategy(true));
+        MysteryManager mystery =
+                new MysteryManager(
+                        board,
+                        new TestSupport.SequenceRandom(0),
+                        List.of((p, b) -> new MysteryOutcome(MysteryOutcome.Type.START, "unused")));
         GameSnapshot snapshot = GameSnapshot.from(0, List.of(player), mystery);
 
-        assertThrows(UnsupportedOperationException.class,
-                () -> snapshot.getPlayers().clear());
-        assertThrows(UnsupportedOperationException.class,
+        assertThrows(UnsupportedOperationException.class, () -> snapshot.getPlayers().clear());
+        assertThrows(
+                UnsupportedOperationException.class,
                 () -> snapshot.getPlayers().getFirst().getPieces().clear());
     }
 }

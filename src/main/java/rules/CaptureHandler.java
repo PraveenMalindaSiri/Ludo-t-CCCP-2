@@ -3,13 +3,10 @@ package rules;
 import board.Board;
 import board.Cell;
 import config.GameConfig;
+import java.util.List;
 import piece.Piece;
 
-import java.util.List;
-
-/**
- * Handles all capture logic.
- */
+/** Handles all capture logic. */
 public class CaptureHandler {
     private final Board board;
     private final GameConfig config;
@@ -19,7 +16,8 @@ public class CaptureHandler {
         this.config = GameConfig.getInstance();
     }
 
-    // single piece capture ------------------------------------------------------------------------------------------
+    // single piece capture
+    // ------------------------------------------------------------------------------------------
 
     // Check if landing is capturing
     public boolean isCapturePossible(Piece movingPiece, int destination) {
@@ -71,15 +69,15 @@ public class CaptureHandler {
         if (capturerPiece == null || capturedPiece == null) return;
         if (capturedPiece.getColor().equalsIgnoreCase(capturerPiece.getColor())) return;
 
-        boolean wasActuallyOnBoard = capturedPiece.isOnBoard()
-                && !capturedPiece.isInBase()
-                && !capturedPiece.isAtHome()
-                && capturedPiece.getPosition() >= 0
-                && capturedPiece.getPosition() < config.getStandardCellCount();
+        boolean wasActuallyOnBoard =
+                capturedPiece.isOnBoard()
+                        && !capturedPiece.isInBase()
+                        && !capturedPiece.isAtHome()
+                        && capturedPiece.getPosition() >= 0
+                        && capturedPiece.getPosition() < config.getStandardCellCount();
 
         if (!wasActuallyOnBoard) {
-            if (!board.getBaseCell(capturedPiece.getColor())
-                    .getPieces().contains(capturedPiece)) {
+            if (!board.getBaseCell(capturedPiece.getColor()).getPieces().contains(capturedPiece)) {
                 board.initializeInBase(capturedPiece);
             }
             return;
@@ -98,5 +96,4 @@ public class CaptureHandler {
                 && !piece.isInHomeStraight()
                 && piece.getPosition() == position;
     }
-
 }

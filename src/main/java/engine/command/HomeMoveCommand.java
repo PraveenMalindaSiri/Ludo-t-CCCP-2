@@ -4,17 +4,14 @@ import board.Board;
 import config.GameConfig;
 import piece.Piece;
 
-/**
- * Moves a piece within its home straight or into Home.
- */
+/** Moves a piece within its home straight or into Home. */
 public final class HomeMoveCommand implements ICommand {
     private final Piece piece;
     private final Board board;
     private final int destinationIndex;
     private final int movement;
 
-    public HomeMoveCommand(Piece piece, Board board,
-                           int destinationIndex, int movement) {
+    public HomeMoveCommand(Piece piece, Board board, int destinationIndex, int movement) {
         this.piece = piece;
         this.board = board;
         this.destinationIndex = destinationIndex;
