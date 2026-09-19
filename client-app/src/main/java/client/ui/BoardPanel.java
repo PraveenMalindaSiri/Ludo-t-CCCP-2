@@ -71,15 +71,13 @@ public final class BoardPanel extends JPanel {
         }
     }
 
-    private void fillArea(
-            Graphics2D g, int x, int y, int cell, int gridX, int gridY, Color color) {
+    private void fillArea(Graphics2D g, int x, int y, int cell, int gridX, int gridY, Color color) {
         g.setColor(color);
         g.fillRoundRect(x + gridX * cell, y + gridY * cell, 6 * cell, 6 * cell, cell, cell);
     }
 
     private void paintPath(Graphics2D g, int x, int y, int cell) {
-        BoardGeometry.standardPath()
-                .forEach(point -> paintCell(g, x, y, cell, point, PATH_COLOR));
+        BoardGeometry.standardPath().forEach(point -> paintCell(g, x, y, cell, point, PATH_COLOR));
     }
 
     private void paintHomeStraights(Graphics2D g, int x, int y, int cell) {
@@ -166,8 +164,7 @@ public final class BoardPanel extends JPanel {
                 });
     }
 
-    private void drawCentered(
-            Graphics2D g, String text, int x, int y, int size, Color foreground) {
+    private void drawCentered(Graphics2D g, String text, int x, int y, int size, Color foreground) {
         FontMetrics metrics = g.getFontMetrics();
         int textX = x + (size - metrics.stringWidth(text)) / 2;
         int textY = y + (size - metrics.getHeight()) / 2 + metrics.getAscent();

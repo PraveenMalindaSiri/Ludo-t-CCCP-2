@@ -1,5 +1,6 @@
 package client.ui;
 
+import client.model.ClientViewState;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -10,7 +11,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import client.model.ClientViewState;
 
 /** Host/port form for starting and ending one persistent connection. */
 public final class ConnectionPanel extends JPanel {
@@ -62,7 +62,10 @@ public final class ConnectionPanel extends JPanel {
                                 Integer.parseInt(portField.getText().trim()));
                     } catch (NumberFormatException exception) {
                         JOptionPane.showMessageDialog(
-                                this, "Port must be a number", "Invalid port", JOptionPane.ERROR_MESSAGE);
+                                this,
+                                "Port must be a number",
+                                "Invalid port",
+                                JOptionPane.ERROR_MESSAGE);
                     }
                 });
         disconnectButton.addActionListener(ignored -> disconnectAction.run());
@@ -72,8 +75,7 @@ public final class ConnectionPanel extends JPanel {
         statusLabel.setText(state.statusText());
         boolean disconnected =
                 state.connectionStatus() == ClientViewState.ConnectionStatus.DISCONNECTED;
-        boolean connected =
-                state.connectionStatus() == ClientViewState.ConnectionStatus.CONNECTED;
+        boolean connected = state.connectionStatus() == ClientViewState.ConnectionStatus.CONNECTED;
         hostField.setEnabled(disconnected);
         portField.setEnabled(disconnected);
         connectButton.setEnabled(disconnected);

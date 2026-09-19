@@ -18,11 +18,9 @@ class BoardGeometryTest {
         assertEquals(52, BoardGeometry.standardPath().size());
         assertEquals(52, new HashSet<>(BoardGeometry.standardPath()).size());
         assertNotEquals(BoardGeometry.standardCell(0), BoardGeometry.standardCell(51));
+        assertNotEquals(BoardGeometry.base("RED", 0), BoardGeometry.base("RED", 3));
         assertNotEquals(
-                BoardGeometry.base("RED", 0), BoardGeometry.base("RED", 3));
-        assertNotEquals(
-                BoardGeometry.homeStraight("BLUE", 0),
-                BoardGeometry.homeStraight("BLUE", 5));
+                BoardGeometry.homeStraight("BLUE", 0), BoardGeometry.homeStraight("BLUE", 5));
         assertNotEquals(BoardGeometry.home("RED"), BoardGeometry.home("GREEN"));
         assertEquals(BoardGeometry.standardCell(8), BoardGeometry.pointFor("Yellow", "8", 0));
         assertEquals(

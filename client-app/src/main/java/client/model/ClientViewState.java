@@ -45,41 +45,39 @@ public record ClientViewState(
     }
 
     public ClientViewState withConnection(ConnectionStatus status, String text) {
-        return new ClientViewState(
-                status, text, clientId, sessions, snapshot, events, lastAction);
+        return new ClientViewState(status, text, clientId, sessions, snapshot, events, lastAction);
     }
 
     public ClientViewState connectedTo(String text) {
         return new ClientViewState(
-                ConnectionStatus.CONNECTED,
-                text,
-                clientId,
-                List.of(),
-                null,
-                events,
-                "");
+                ConnectionStatus.CONNECTED, text, clientId, List.of(), null, events, "");
     }
 
     public ClientViewState withSessions(List<SessionSummaryDto> newSessions, String action) {
         return new ClientViewState(
-                connectionStatus,
-                statusText,
-                clientId,
-                newSessions,
-                snapshot,
-                events,
-                action);
+                connectionStatus, statusText, clientId, newSessions, snapshot, events, action);
     }
 
     public ClientViewState withSnapshot(GameSnapshotDto newSnapshot, String action) {
         return new ClientViewState(
-                connectionStatus,
-                statusText,
-                clientId,
-                sessions,
-                newSnapshot,
-                events,
-                action);
+                connectionStatus, statusText, clientId, sessions, newSnapshot, events, action);
+    }
+
+    public ClientViewState leaveSession(String action) {
+        return new ClientViewState(
+                connectionStatus, statusText, clientId, sessions, null, events, action);
+    }
+
+    public ClientViewState updateSession(SessionSummaryDto updated, String action) {
+        if (updated == null) {
+            return new ClientViewState(
+                    connectionStatus, statusText, clientId, sessions, snapshot, events, action);
+        }
+        List<SessionSummaryDto> revised = new ArrayList<>(sessions);
+        revised.removeIf(session -> session.sessionId().equals(updated.sessionId()));
+        revised.add(updated);
+        return new ClientViewState(
+                connectionStatus, statusText, clientId, revised, snapshot, events, action);
     }
 
     public ClientViewState appendEvent(String event, int maximumEvents) {
@@ -90,15 +88,11 @@ public record ClientViewState(
         List<String> updated = new ArrayList<>(events);
         updated.add(event);
         if (updated.size() > maximumEvents) {
-            updated = new ArrayList<>(updated.subList(updated.size() - maximumEvents, updated.size()));
+            updated =
+                    new ArrayList<>(
+                            updated.subList(updated.size() - maximumEvents, updated.size()));
         }
         return new ClientViewState(
-                connectionStatus,
-                statusText,
-                clientId,
-                sessions,
-                snapshot,
-                updated,
-                event);
+                connectionStatus, statusText, clientId, sessions, snapshot, updated, event);
     }
 }

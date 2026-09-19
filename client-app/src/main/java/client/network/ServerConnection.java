@@ -40,8 +40,7 @@ public final class ServerConnection implements ClientTransport {
     private final ClientConfig config;
     private final UUID clientId;
     private final JsonLineCodec codec;
-    private final Map<UUID, CompletableFuture<ResponseMessage>> pending =
-            new ConcurrentHashMap<>();
+    private final Map<UUID, CompletableFuture<ResponseMessage>> pending = new ConcurrentHashMap<>();
     private final AtomicReference<State> state = new AtomicReference<>(State.DISCONNECTED);
     private volatile Consumer<EventMessage> eventListener = event -> {};
     private volatile Consumer<Throwable> connectionClosedListener = cause -> {};
@@ -86,8 +85,7 @@ public final class ServerConnection implements ClientTransport {
             String host, int port, CompletableFuture<ResponseMessage> connectResult) {
         try {
             Socket newSocket = new Socket();
-            newSocket.connect(
-                    new InetSocketAddress(host, port), config.connectTimeoutMillis());
+            newSocket.connect(new InetSocketAddress(host, port), config.connectTimeoutMillis());
             newSocket.setTcpNoDelay(true);
             socket = newSocket;
             reader =
@@ -137,12 +135,7 @@ public final class ServerConnection implements ClientTransport {
         UUID requestId = UUID.randomUUID();
         RequestMessage request =
                 RequestMessage.create(
-                        requestId,
-                        clientId,
-                        requestType,
-                        sessionId,
-                        parameters,
-                        Instant.now());
+                        requestId, clientId, requestType, sessionId, parameters, Instant.now());
         CompletableFuture<ResponseMessage> future = new CompletableFuture<>();
         pending.put(requestId, future);
         future.orTimeout(config.requestTimeoutMillis(), TimeUnit.MILLISECONDS);
@@ -214,8 +207,7 @@ public final class ServerConnection implements ClientTransport {
     private void handleResponse(ResponseMessage response) {
         CompletableFuture<ResponseMessage> future = pending.remove(response.requestId());
         if (future == null) {
-            System.err.println(
-                    "Ignoring response with unknown request ID " + response.requestId());
+            System.err.println("Ignoring response with unknown request ID " + response.requestId());
             return;
         }
         future.complete(response);
@@ -258,8 +250,7 @@ public final class ServerConnection implements ClientTransport {
         interruptOther(connectorThread);
         interruptOther(readerThread);
         interruptOther(writerThread);
-        Throwable completionCause =
-                cause == null ? new IOException("Connection closed") : cause;
+        Throwable completionCause = cause == null ? new IOException("Connection closed") : cause;
         pending.values().forEach(future -> future.completeExceptionally(completionCause));
         pending.clear();
         connectionClosedListener.accept(cause);
