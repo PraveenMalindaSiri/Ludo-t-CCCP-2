@@ -17,9 +17,10 @@ import protocol.MessageKind;
 import protocol.ProtocolException;
 import protocol.RequestMessage;
 import server.ServerConfig;
+import server.application.port.SessionSubscriber;
 
 /** Owns the reader, bounded output queue and sole writer for one persistent socket. */
-public final class ClientConnection implements AutoCloseable {
+public final class ClientConnection implements AutoCloseable, SessionSubscriber {
 
     private final UUID connectionId = UUID.randomUUID();
     private final Socket socket;
@@ -36,10 +37,7 @@ public final class ClientConnection implements AutoCloseable {
     private volatile Thread writerThread;
 
     public ClientConnection(
-            Socket socket,
-            ServerConfig config,
-            RequestDispatcher dispatcher,
-            Runnable onClosed)
+            Socket socket, ServerConfig config, RequestDispatcher dispatcher, Runnable onClosed)
             throws IOException {
         this.socket = Objects.requireNonNull(socket, "socket");
         this.dispatcher = Objects.requireNonNull(dispatcher, "dispatcher");
@@ -82,8 +80,19 @@ public final class ClientConnection implements AutoCloseable {
                 && currentWriter.isVirtual();
     }
 
-    public boolean send(Object message) {
+    @Override
+    public boolean offer(Object message) {
         return enqueue(new OutboundMessage(message, false));
+    }
+
+    @Override
+    public boolean isOpen() {
+        return !closed.get();
+    }
+
+    /** Compatibility alias retained for the Work 02 writer-queue test. */
+    public boolean send(Object message) {
+        return offer(message);
     }
 
     private void readLoop() {
@@ -99,10 +108,13 @@ public final class ClientConnection implements AutoCloseable {
                 }
                 RequestMessage request = codec.decode(line, RequestMessage.class);
                 RequestDispatcher.DispatchResult result =
-                        dispatcher.dispatch(request, registeredClientId);
+                        dispatcher.dispatch(request, registeredClientId, this);
                 registeredClientId = result.registeredClientId();
-                if (!enqueue(new OutboundMessage(result.response(), result.closeAfterWrite()))) {
-                    return;
+                if (result.response() != null) {
+                    if (!enqueue(
+                            new OutboundMessage(result.response(), result.closeAfterWrite()))) {
+                        return;
+                    }
                 }
                 if (result.closeAfterWrite()) {
                     return;
@@ -166,6 +178,7 @@ public final class ClientConnection implements AutoCloseable {
         }
         interruptOther(readerThread);
         interruptOther(writerThread);
+        dispatcher.connectionClosed(this);
         onClosed.run();
     }
 

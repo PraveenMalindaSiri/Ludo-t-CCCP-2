@@ -34,10 +34,7 @@ class ClientConnectionWriterTest {
                     new ClientConnection(
                             serverSide,
                             new ServerConfig(
-                                    "127.0.0.1",
-                                    0,
-                                    128,
-                                    JsonLineCodec.DEFAULT_MAX_LINE_LENGTH),
+                                    "127.0.0.1", 0, 128, JsonLineCodec.DEFAULT_MAX_LINE_LENGTH),
                             new RequestDispatcher(),
                             () -> {});
             connection.start();
@@ -95,8 +92,7 @@ class ClientConnectionWriterTest {
                             JsonLineCodec.DEFAULT_MAX_LINE_LENGTH);
             Set<UUID> actualIds = new HashSet<>();
             for (int index = 0; index < count; index++) {
-                ResponseMessage response =
-                        codec.decode(reader.readLine(), ResponseMessage.class);
+                ResponseMessage response = codec.decode(reader.readLine(), ResponseMessage.class);
                 actualIds.add(response.requestId());
             }
             assertEquals(expectedIds, actualIds);

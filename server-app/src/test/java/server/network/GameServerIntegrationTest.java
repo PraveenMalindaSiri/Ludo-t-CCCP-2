@@ -17,10 +17,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import protocol.BoundedLineReader;
 import protocol.JsonLineCodec;
-import protocol.MessageKind;
 import protocol.RequestMessage;
 import protocol.RequestType;
 import protocol.ResponseMessage;
+import protocol.SessionStatus;
 import server.ServerConfig;
 
 class GameServerIntegrationTest {
@@ -68,6 +68,52 @@ class GameServerIntegrationTest {
             assertEquals(2, server.connectionCount());
             assertEquals("PONG", first.exchange(first.request(RequestType.PING)).message());
             assertEquals("PONG", second.exchange(second.request(RequestType.PING)).message());
+        }
+    }
+
+    @Test
+    void twoClientsCreateJoinAndControlOneServerOwnedSession() throws Exception {
+        try (RawClient creator = new RawClient(server.port());
+                RawClient second = new RawClient(server.port())) {
+            assertTrue(creator.exchange(creator.request(RequestType.CONNECT)).success());
+            assertTrue(second.exchange(second.request(RequestType.CONNECT)).success());
+
+            ResponseMessage created =
+                    creator.exchange(
+                            creator.request(
+                                    RequestType.CREATE_SESSION,
+                                    null,
+                                    Map.of("name", "Game-1", "seed", "42")));
+            UUID sessionId = created.sessionId();
+            assertTrue(created.success());
+            assertEquals(SessionStatus.CREATED, created.snapshot().status());
+
+            ResponseMessage lobby = second.exchange(second.request(RequestType.LIST_SESSIONS));
+            assertEquals(sessionId, lobby.sessions().getFirst().sessionId());
+            assertTrue(
+                    second.exchange(second.request(RequestType.JOIN_SESSION, sessionId, Map.of()))
+                            .success());
+
+            ResponseMessage started =
+                    creator.exchange(creator.request(RequestType.START_GAME, sessionId, Map.of()));
+            assertEquals(SessionStatus.RUNNING, started.snapshot().status());
+            ResponseMessage paused =
+                    creator.exchange(creator.request(RequestType.PAUSE_GAME, sessionId, Map.of()));
+            assertEquals(SessionStatus.PAUSED, paused.snapshot().status());
+            long turnBefore = paused.snapshot().turn();
+            ResponseMessage stepped =
+                    second.exchange(second.request(RequestType.STEP_GAME, sessionId, Map.of()));
+            assertEquals(turnBefore + 1, stepped.snapshot().turn());
+            assertEquals(SessionStatus.PAUSED, stepped.snapshot().status());
+
+            assertTrue(
+                    creator.exchange(
+                                    creator.request(RequestType.LEAVE_SESSION, sessionId, Map.of()))
+                            .success());
+            ResponseMessage snapshot =
+                    second.exchange(second.request(RequestType.GET_SNAPSHOT, sessionId, Map.of()));
+            assertEquals(SessionStatus.PAUSED, snapshot.snapshot().status());
+            assertEquals(1, snapshot.session().connectedClients());
         }
     }
 
@@ -132,14 +178,18 @@ class GameServerIntegrationTest {
                                     socket.getOutputStream(), StandardCharsets.UTF_8));
             reader =
                     new BoundedLineReader(
-                            new InputStreamReader(
-                                    socket.getInputStream(), StandardCharsets.UTF_8),
+                            new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8),
                             JsonLineCodec.DEFAULT_MAX_LINE_LENGTH);
         }
 
         private RequestMessage request(RequestType type) {
+            return request(type, null, Map.of());
+        }
+
+        private RequestMessage request(
+                RequestType type, UUID sessionId, Map<String, String> parameters) {
             return RequestMessage.create(
-                    UUID.randomUUID(), clientId, type, null, Map.of(), Instant.now());
+                    UUID.randomUUID(), clientId, type, sessionId, parameters, Instant.now());
         }
 
         private ResponseMessage exchange(RequestMessage request) throws Exception {
