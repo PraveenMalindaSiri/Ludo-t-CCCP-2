@@ -8,6 +8,8 @@ import protocol.RequestMessage;
 import protocol.RequestType;
 import protocol.ResponseMessage;
 import server.ServerConfig;
+import server.application.port.GameRepository;
+import server.application.port.RepositoryException;
 import server.application.port.SessionSubscriber;
 import server.session.GameSession;
 import server.session.SessionRegistry;
@@ -16,13 +18,23 @@ import server.session.SessionRegistry;
 public final class GameService implements AutoCloseable {
 
     private final SessionRegistry registry;
+    private final GameRepository repository;
 
     public GameService(ServerConfig config) {
         this(new SessionRegistry(config.sessionQueueCapacity(), config.defaultTurnDelayMillis()));
     }
 
+    public GameService(ServerConfig config, GameRepository repository) {
+        this(
+                new SessionRegistry(
+                        config.sessionQueueCapacity(),
+                        config.defaultTurnDelayMillis(),
+                        repository));
+    }
+
     public GameService(SessionRegistry registry) {
         this.registry = registry;
+        this.repository = registry.repository();
     }
 
     public ResponseMessage handleOrEnqueue(
@@ -82,14 +94,22 @@ public final class GameService implements AutoCloseable {
             return failure(request, ErrorCode.INVALID_REQUEST, "seed must be a long integer");
         }
 
-        GameSession session = registry.create(name, seed);
+        final GameSession session;
+        try {
+            session = registry.create(name, seed);
+        } catch (RepositoryException failure) {
+            return failure(
+                    request,
+                    ErrorCode.SERVER_ERROR,
+                    "Unable to persist new session: " + safeMessage(failure));
+        }
         RequestMessage join =
                 new RequestMessage(
                         request.protocolVersion(),
                         request.kind(),
                         request.requestId(),
                         request.clientId(),
-                        RequestType.JOIN_SESSION,
+                        RequestType.CREATE_SESSION,
                         session.sessionId(),
                         request.parameters(),
                         request.sentAt());
@@ -129,8 +149,17 @@ public final class GameService implements AutoCloseable {
                 Instant.now());
     }
 
+    private static String safeMessage(Throwable failure) {
+        String message = failure.getMessage();
+        return message == null || message.isBlank() ? failure.getClass().getSimpleName() : message;
+    }
+
     @Override
     public void close() {
-        registry.close();
+        try {
+            registry.close();
+        } finally {
+            repository.close();
+        }
     }
 }

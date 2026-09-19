@@ -23,6 +23,10 @@ import protocol.RequestType;
 import protocol.ResponseMessage;
 import protocol.SessionStatus;
 import protocol.SessionSummaryDto;
+import server.application.port.GameRepository;
+import server.application.port.GameRepository.GameResultRecord;
+import server.application.port.GameRepository.SessionRecord;
+import server.application.port.RepositoryException;
 import server.application.port.SessionSubscriber;
 import server.session.GameEventCollector.EventBatch;
 import server.session.SnapshotMapper.SessionMetadata;
@@ -35,7 +39,9 @@ public final class GameSession implements AutoCloseable {
 
     private final UUID sessionId;
     private final String name;
+    private final long randomSeed;
     private final GameEngine engine;
+    private final GameRepository repository;
     private final GameEventCollector eventCollector = new GameEventCollector();
     private final SnapshotMapper snapshotMapper = new SnapshotMapper();
     private final BlockingQueue<RequestEnvelope> requests;
@@ -53,6 +59,7 @@ public final class GameSession implements AutoCloseable {
     private volatile Instant startedAt;
     private volatile Instant completedAt;
     private volatile Throwable startupFailure;
+    private volatile boolean persistenceRegistered;
     private String lastAction = "Session created";
     private Integer lastDice;
     private String lastResult = "";
@@ -70,7 +77,27 @@ public final class GameSession implements AutoCloseable {
                 GameFactory.createGame(randomSeed),
                 queueCapacity,
                 defaultTurnDelayMillis,
-                true);
+                true,
+                GameRepository.disabled(),
+                randomSeed);
+    }
+
+    GameSession(
+            UUID sessionId,
+            String name,
+            long randomSeed,
+            int queueCapacity,
+            long defaultTurnDelayMillis,
+            GameRepository repository) {
+        this(
+                sessionId,
+                name,
+                GameFactory.createGame(randomSeed),
+                queueCapacity,
+                defaultTurnDelayMillis,
+                true,
+                repository,
+                randomSeed);
     }
 
     GameSession(
@@ -80,6 +107,26 @@ public final class GameSession implements AutoCloseable {
             int queueCapacity,
             long defaultTurnDelayMillis,
             boolean startWorker) {
+        this(
+                sessionId,
+                name,
+                engine,
+                queueCapacity,
+                defaultTurnDelayMillis,
+                startWorker,
+                GameRepository.disabled(),
+                0L);
+    }
+
+    private GameSession(
+            UUID sessionId,
+            String name,
+            GameEngine engine,
+            int queueCapacity,
+            long defaultTurnDelayMillis,
+            boolean startWorker,
+            GameRepository repository,
+            long randomSeed) {
         this.sessionId = Objects.requireNonNull(sessionId, "sessionId");
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("name must not be blank");
@@ -88,7 +135,9 @@ public final class GameSession implements AutoCloseable {
             throw new IllegalArgumentException("Queue capacity and turn delay must be positive");
         }
         this.name = name.trim();
+        this.randomSeed = randomSeed;
         this.engine = Objects.requireNonNull(engine, "engine");
+        this.repository = Objects.requireNonNull(repository, "repository");
         this.engine.addEventListener(eventCollector);
         this.requests = new ArrayBlockingQueue<>(queueCapacity);
         this.turnDelayMillis = defaultTurnDelayMillis;
@@ -135,6 +184,15 @@ public final class GameSession implements AutoCloseable {
 
     public Instant completedAt() {
         return completedAt;
+    }
+
+    SessionRecord persistenceRecord(Instant updatedAt) {
+        return new SessionRecord(
+                sessionId, name, randomSeed, status, createdAt, startedAt, completedAt, updatedAt);
+    }
+
+    void markPersistenceRegistered() {
+        persistenceRegistered = repository.isEnabled();
     }
 
     public int pendingRequestCount() {
@@ -196,11 +254,13 @@ public final class GameSession implements AutoCloseable {
             ready.countDown();
             if (status != SessionStatus.COMPLETED && status != SessionStatus.STOPPED) {
                 status = SessionStatus.INTERRUPTED;
+                completedAt = Instant.now();
                 version++;
                 lastAction = "Session interrupted";
                 if (latestSnapshot != null) {
                     refreshSnapshot();
                 }
+                persistInterrupted();
             }
             engine.removeEventListener(eventCollector);
             failPendingRequests();
@@ -227,31 +287,39 @@ public final class GameSession implements AutoCloseable {
             if (result.success() && result.withSnapshot()) {
                 refreshSnapshot();
             }
+            String persistenceWarning = "";
+            if (result.success() && result.stateMutated()) {
+                persistenceWarning = persistMutation();
+            }
+            String message = appendWarning(result.message(), persistenceWarning);
             ResponseMessage response =
                     result.success()
-                            ? success(envelope.request(), result.message(), result.withSnapshot())
-                            : failure(envelope.request(), result.errorCode(), result.message());
+                            ? success(envelope.request(), message, result.withSnapshot())
+                            : failure(envelope.request(), result.errorCode(), message);
             envelope.complete(response);
             if (result.success() && result.stateMutated()) {
                 broadcast(events.events());
             }
         } catch (RuntimeException failure) {
             eventCollector.drain();
-            envelope.complete(
+            ResponseMessage response =
                     failure(
                             envelope.request(),
                             ErrorCode.SERVER_ERROR,
-                            "Session request failed: " + safeMessage(failure)));
+                            "Session request failed: " + safeMessage(failure));
+            envelope.complete(response);
         }
     }
 
     private HandleResult handle(RequestMessage request, SessionSubscriber subscriber) {
-        if (request.requestType() != RequestType.JOIN_SESSION
+        if (request.requestType() != RequestType.CREATE_SESSION
+                && request.requestType() != RequestType.JOIN_SESSION
                 && !subscribers.contains(subscriber)) {
             return rejected(
                     ErrorCode.INVALID_STATE, "Join the session before requesting game operations");
         }
         return switch (request.requestType()) {
+            case CREATE_SESSION -> join(subscriber);
             case JOIN_SESSION -> join(subscriber);
             case LEAVE_SESSION -> leave(subscriber);
             case GET_SNAPSHOT -> accepted("Snapshot retrieved", true, false);
@@ -375,6 +443,10 @@ public final class GameSession implements AutoCloseable {
         EventBatch events = eventCollector.drain();
         updateLatestEventMetadata(events);
         refreshSnapshot();
+        String warning = persistMutation();
+        if (!warning.isBlank()) {
+            System.err.printf("Session %s automatic turn: %s%n", sessionId, warning);
+        }
         broadcast(events.events());
         if (status == SessionStatus.RUNNING) {
             nextTurnDeadlineNanos = System.nanoTime() + delayNanos();
@@ -416,6 +488,58 @@ public final class GameSession implements AutoCloseable {
                                 lastDice,
                                 lastResult,
                                 requests.size()));
+    }
+
+    private String persistMutation() {
+        if (!persistenceAvailable()) {
+            return "";
+        }
+        Instant persistedAt = Instant.now();
+        try {
+            SessionRecord session = persistenceRecord(persistedAt);
+            if (status == SessionStatus.COMPLETED) {
+                List<String> placements = latestSnapshot.finalPlacements();
+                repository.saveCompletedResult(
+                        session,
+                        new GameResultRecord(
+                                sessionId,
+                                placements.getFirst(),
+                                placements,
+                                latestSnapshot.round(),
+                                completedAt));
+            } else {
+                repository.updateSession(session);
+            }
+            return "";
+        } catch (RepositoryException | IllegalArgumentException failure) {
+            String warning = "history persistence failed: " + safeMessage(failure);
+            System.err.printf("Session %s %s%n", sessionId, warning);
+            return warning;
+        }
+    }
+
+    private void persistInterrupted() {
+        if (!persistenceAvailable()) {
+            return;
+        }
+        Instant interruptedAt = Instant.now();
+        try {
+            repository.updateSession(persistenceRecord(interruptedAt));
+        } catch (RepositoryException failure) {
+            System.err.printf(
+                    "Session %s shutdown persistence failed: %s%n",
+                    sessionId, safeMessage(failure));
+        }
+    }
+
+    private boolean persistenceAvailable() {
+        return persistenceRegistered && repository.isEnabled();
+    }
+
+    private static String appendWarning(String message, String warning) {
+        return warning == null || warning.isBlank()
+                ? message
+                : message + " (warning: " + warning + ")";
     }
 
     private void broadcast(List<String> gameEvents) {
@@ -532,6 +656,13 @@ public final class GameSession implements AutoCloseable {
         }
         if (worker != null) {
             worker.interrupt();
+            if (worker != Thread.currentThread()) {
+                try {
+                    worker.join(TimeUnit.SECONDS.toMillis(5));
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         }
     }
 
