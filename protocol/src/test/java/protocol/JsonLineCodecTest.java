@@ -153,6 +153,17 @@ class JsonLineCodecTest {
     }
 
     @Test
+    void messageKindCanBeInspectedBeforeTypedDecoding() throws Exception {
+        RequestMessage request =
+                RequestMessage.create(
+                        REQUEST_ID, CLIENT_ID, RequestType.PING, null, Map.of(), TIME);
+
+        assertEquals(MessageKind.REQUEST, codec.decodeKind(codec.encode(request)));
+        assertThrows(ProtocolException.class, () -> codec.decodeKind("{\"kind\":7}"));
+        assertThrows(ProtocolException.class, () -> codec.decodeKind("{\"missing\":true}"));
+    }
+
+    @Test
     void malformedJsonAndTrailingTokensAreRejectedClearly() {
         assertThrows(
                 ProtocolException.class,

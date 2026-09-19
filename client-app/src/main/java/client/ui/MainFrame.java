@@ -1,0 +1,72 @@
+package client.ui;
+
+import client.ClientController;
+import client.model.ClientViewState;
+import java.awt.CardLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+
+/** Top-level three-screen Swing window. */
+public final class MainFrame extends JFrame implements ClientController.View {
+
+    private static final String CONNECTION = "connection";
+    private static final String LOBBY = "lobby";
+    private static final String GAME = "game";
+
+    private final CardLayout cards = new CardLayout();
+    private final JPanel content = new JPanel(cards);
+    private final ConnectionPanel connectionPanel;
+    private final LobbyPanel lobbyPanel;
+    private final GamePanel gamePanel = new GamePanel();
+
+    public MainFrame(ClientController controller, String defaultHost, int defaultPort) {
+        super("LUDO-T Client");
+        if (!SwingUtilities.isEventDispatchThread()) {
+            throw new IllegalStateException("MainFrame must be created on the EDT");
+        }
+        connectionPanel =
+                new ConnectionPanel(
+                        defaultHost, defaultPort, controller::connect, controller::disconnect);
+        lobbyPanel =
+                new LobbyPanel(
+                        controller::refreshSessions,
+                        controller::ping,
+                        controller::disconnect);
+        content.add(connectionPanel, CONNECTION);
+        content.add(lobbyPanel, LOBBY);
+        content.add(gamePanel, GAME);
+        setContentPane(content);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setMinimumSize(new java.awt.Dimension(940, 700));
+        setSize(1120, 820);
+        setLocationByPlatform(true);
+        addWindowListener(
+                new WindowAdapter() {
+                    @Override
+                    public void windowClosed(WindowEvent event) {
+                        controller.close();
+                    }
+                });
+    }
+
+    @Override
+    public void render(ClientViewState state) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            throw new IllegalStateException("MainFrame rendering must run on the EDT");
+        }
+        connectionPanel.render(state);
+        lobbyPanel.render(state.sessions(), state.lastAction());
+        gamePanel.render(state.snapshot(), state.events(), state.lastAction());
+
+        if (state.connectionStatus() != ClientViewState.ConnectionStatus.CONNECTED) {
+            cards.show(content, CONNECTION);
+        } else if (state.snapshot() == null) {
+            cards.show(content, LOBBY);
+        } else {
+            cards.show(content, GAME);
+        }
+    }
+}

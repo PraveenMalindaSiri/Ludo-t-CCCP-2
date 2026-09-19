@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.util.Objects;
@@ -51,7 +52,7 @@ public final class JsonLineCodec {
         return encode(message) + '\n';
     }
 
-    /** Decodes one line after a BufferedReader/readLine-style boundary has removed the LF. */
+    /** Decodes one line after BoundedLineReader has removed the LF boundary. */
     public <T> T decode(String line, Class<T> messageType) throws ProtocolException {
         Objects.requireNonNull(messageType, "messageType");
         validateInputLine(line);
@@ -60,6 +61,26 @@ public final class JsonLineCodec {
         } catch (JsonProcessingException | IllegalArgumentException exception) {
             throw new ProtocolException(
                     "Malformed or invalid " + messageType.getSimpleName(), exception);
+        }
+    }
+
+    /** Reads only the top-level message kind so a connection can route the line safely. */
+    public MessageKind decodeKind(String line) throws ProtocolException {
+        validateInputLine(line);
+        try {
+            JsonNode root = mapper.readTree(line);
+            if (root == null || !root.isObject()) {
+                throw new ProtocolException("Protocol message must be a JSON object");
+            }
+            JsonNode kind = root.get("kind");
+            if (kind == null || !kind.isTextual()) {
+                throw new ProtocolException("Protocol message requires a textual kind");
+            }
+            return MessageKind.valueOf(kind.textValue());
+        } catch (ProtocolException exception) {
+            throw exception;
+        } catch (JsonProcessingException | IllegalArgumentException exception) {
+            throw new ProtocolException("Malformed or invalid protocol message kind", exception);
         }
     }
 
