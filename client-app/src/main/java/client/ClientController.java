@@ -22,6 +22,7 @@ public final class ClientController implements AutoCloseable {
     private final ClientTransport transport;
     private final int eventHistoryLimit;
     private ClientViewState state;
+    private UUID activeSessionId;
     private View view = ignored -> {};
 
     public ClientController(ClientTransport transport, int eventHistoryLimit) {
@@ -64,6 +65,7 @@ public final class ClientController implements AutoCloseable {
                                             setState(
                                                     state.connectedTo(
                                                             "Connected as " + response.clientId()));
+                                            activeSessionId = null;
                                             refreshSessions();
                                         }));
     }
@@ -144,6 +146,7 @@ public final class ClientController implements AutoCloseable {
                                             } else if (!response.success()) {
                                                 appendEvent(response.message());
                                             } else {
+                                                activeSessionId = null;
                                                 setState(state.leaveSession(response.message()));
                                                 refreshSessions();
                                             }
@@ -202,10 +205,12 @@ public final class ClientController implements AutoCloseable {
 
     private void acceptEvent(EventMessage event) {
         requireEdt();
+        if (event.sessionId() != null && !event.sessionId().equals(activeSessionId)) {
+            return;
+        }
         GameSnapshotDto incoming = event.snapshot();
-        if (incoming != null
-                && (state.snapshot() == null || incoming.version() > state.snapshot().version())) {
-            setState(state.withSnapshot(incoming, event.message()));
+        if (incoming != null) {
+            setState(state.withSnapshotIfNewer(incoming, event.message()));
         }
         if (event.message() != null && !event.message().isBlank()) {
             appendEvent(event.message());
@@ -240,8 +245,9 @@ public final class ClientController implements AutoCloseable {
                                             state.updateSession(
                                                     response.session(), response.message());
                                     if (response.snapshot() != null) {
+                                        activeSessionId = response.snapshot().sessionId();
                                         updated =
-                                                updated.withSnapshot(
+                                                updated.withSnapshotIfNewer(
                                                         response.snapshot(), response.message());
                                     }
                                     setState(updated);
@@ -253,11 +259,12 @@ public final class ClientController implements AutoCloseable {
     }
 
     private UUID activeSessionId() {
-        return state.snapshot() == null ? null : state.snapshot().sessionId();
+        return activeSessionId;
     }
 
     private void acceptConnectionClosed(Throwable failure) {
         requireEdt();
+        activeSessionId = null;
         String message = failure == null ? "Disconnected" : failureMessage(failure);
         setState(state.withConnection(ConnectionStatus.DISCONNECTED, message));
     }

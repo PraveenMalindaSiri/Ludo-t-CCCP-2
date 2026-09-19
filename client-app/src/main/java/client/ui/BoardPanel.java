@@ -138,11 +138,14 @@ public final class BoardPanel extends JPanel {
                         player -> {
                             for (int index = 0; index < player.pieces().size(); index++) {
                                 GameSnapshotDto.PieceDto piece = player.pieces().get(index);
-                                Point point =
-                                        BoardGeometry.pointFor(
-                                                player.color(), piece.position(), index);
+                                Point point = BoardGeometry.pointFor(piece, index);
                                 grouped.computeIfAbsent(point, ignored -> new ArrayList<>())
-                                        .add(new PieceView(player.color(), piece.name()));
+                                        .add(
+                                                new PieceView(
+                                                        player.color(),
+                                                        piece.name(),
+                                                        piece.inBlock(),
+                                                        piece.stateLabel()));
                             }
                         });
 
@@ -160,6 +163,10 @@ public final class BoardPanel extends JPanel {
                         g.setColor(Color.DARK_GRAY);
                         g.drawOval(left, top, diameter, diameter);
                         drawCentered(g, piece.name(), left, top, diameter, Color.BLACK);
+                        if (piece.inBlock()) {
+                            g.setStroke(new BasicStroke(2f));
+                            g.drawRect(left - 1, top - 1, diameter + 2, diameter + 2);
+                        }
                     }
                 });
     }
@@ -184,5 +191,5 @@ public final class BoardPanel extends JPanel {
         return new Color(base.getRed(), base.getGreen(), base.getBlue(), alpha);
     }
 
-    private record PieceView(String color, String name) {}
+    private record PieceView(String color, String name, boolean inBlock, String state) {}
 }

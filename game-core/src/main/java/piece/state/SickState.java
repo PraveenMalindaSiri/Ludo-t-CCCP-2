@@ -50,6 +50,7 @@ public class SickState implements IPieceState {
         return this;
     }
 
+    @Override
     public int getRoundsRemaining() {
         return roundsRemaining;
     }

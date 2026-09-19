@@ -3,6 +3,7 @@ package client.ui;
 import java.awt.Point;
 import java.util.List;
 import java.util.Locale;
+import protocol.GameSnapshotDto;
 
 /** Deterministic mapping from protocol position strings to a 15-by-15 board grid. */
 public final class BoardGeometry {
@@ -92,6 +93,15 @@ public final class BoardGeometry {
             return home(normalizedColor);
         }
         return base(normalizedColor, pieceIndex);
+    }
+
+    public static Point pointFor(GameSnapshotDto.PieceDto piece, int pieceIndex) {
+        return switch (piece.area()) {
+            case BASE -> base(piece.color(), pieceIndex);
+            case STANDARD_PATH -> standardCell(piece.standardPosition());
+            case HOME_STRAIGHT -> homeStraight(piece.color(), piece.homeStraightIndex());
+            case HOME -> home(piece.color());
+        };
     }
 
     public static Point standardCell(int index) {

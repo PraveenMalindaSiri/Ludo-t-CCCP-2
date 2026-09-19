@@ -27,4 +27,14 @@ public interface IPieceState {
 
     /** Called after a pending teleport request has been handled. */
     IPieceState onTeleportHandled();
+
+    /** Stable, presentation-safe state name for immutable snapshots. */
+    default String getDisplayName() {
+        return getClass().getSimpleName().replace("State", "").toUpperCase();
+    }
+
+    /** Remaining duration for timed effects; normal states report zero. */
+    default int getRoundsRemaining() {
+        return 0;
+    }
 }

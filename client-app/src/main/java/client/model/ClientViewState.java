@@ -63,6 +63,20 @@ public record ClientViewState(
                 connectionStatus, statusText, clientId, sessions, newSnapshot, events, action);
     }
 
+    /**
+     * Accepts a full snapshot for a new session, or only a strictly newer version for the current
+     * session.
+     */
+    public ClientViewState withSnapshotIfNewer(GameSnapshotDto incoming, String action) {
+        Objects.requireNonNull(incoming, "incoming");
+        if (snapshot != null
+                && snapshot.sessionId().equals(incoming.sessionId())
+                && incoming.version() <= snapshot.version()) {
+            return this;
+        }
+        return withSnapshot(incoming, action);
+    }
+
     public ClientViewState leaveSession(String action) {
         return new ClientViewState(
                 connectionStatus, statusText, clientId, sessions, null, events, action);

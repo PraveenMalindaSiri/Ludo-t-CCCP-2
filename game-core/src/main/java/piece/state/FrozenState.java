@@ -69,6 +69,7 @@ public class FrozenState implements IPieceState {
         return this;
     }
 
+    @Override
     public int getRoundsRemaining() {
         return roundsRemaining;
     }

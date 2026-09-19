@@ -136,7 +136,14 @@ public class GameEngine {
     }
 
     public GameSnapshot getSnapshot() {
-        return GameSnapshot.from(turnManager.getRoundCount(), players, mysteryManager);
+        List<String> placements = new ArrayList<>();
+        for (Player player : finishOrder) placements.add(player.getColor());
+        return GameSnapshot.from(
+                turnManager.getRoundCount(),
+                turnManager.getCurrentPlayer().getColor(),
+                players,
+                mysteryManager,
+                placements);
     }
 
     private void firePlayerInfoEvents() {

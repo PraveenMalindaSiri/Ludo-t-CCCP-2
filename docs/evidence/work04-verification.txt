@@ -1,0 +1,53 @@
+LUDO-T Assignment 2 - Work 04 verification
+Date: 2026-09-19
+Runtime: OpenJDK Temurin 26.0.2.1
+
+Compilation
+-----------
+Java 26 compilation passed for:
+- game-core production sources
+- protocol production sources
+- server-app production sources
+- client-app production sources
+- all game-core, protocol, server-app and client-app test sources
+
+Automated tests
+---------------
+JUnit containers found:      39
+JUnit containers successful: 39
+Tests found:                 130
+Tests started:               130
+Tests successful:            130
+Tests failed:                0
+Tests skipped:               0
+Tests aborted:               0
+
+Work 04 verification included:
+- complete immutable 16-piece snapshots
+- snapshot mapping
+- event collection and drain/reset
+- exact per-mutation version increments
+- duplicate/stale client snapshot rejection
+- two-client pushed pause/resume synchronization
+- late-join full snapshot
+- subscriber/session isolation
+- concurrent progress in different sessions
+- non-blocking slow-subscriber removal
+
+Visual verification
+-------------------
+The Swing game panel was rendered at 1120 x 820 from protocol DTOs. The board, mystery marker,
+structured piece areas, block markers, session metadata, player/piece details and pushed event
+history rendered without overlap or clipping that prevents use. Scrollbars are available for long
+piece/event histories.
+
+Evidence file: docs/evidence/work04-ui-preview.png
+
+The final project ZIP was extracted into a clean directory. All production and test sources
+compiled with Java 26 from that extraction, and the same 130-test suite passed. Live two-client
+screenshots must still be captured locally by following docs/LUDO-T_A2_WORK_04_LOCAL_GUIDE.md.
+
+Scope check
+-----------
+No MySQL/JDBC implementation, rapid automatic test-client implementation, CSV evidence logging or
+final submission packaging was added.
