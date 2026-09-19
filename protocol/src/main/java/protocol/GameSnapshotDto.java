@@ -11,7 +11,10 @@ public record GameSnapshotDto(
         int round,
         SessionStatus status,
         List<PlayerDto> players,
-        MysteryDto mystery) {
+        MysteryDto mystery,
+        String currentPlayer,
+        long turn,
+        String lastAction) {
 
     public GameSnapshotDto {
         Objects.requireNonNull(sessionId, "sessionId");
@@ -24,6 +27,22 @@ public record GameSnapshotDto(
         Objects.requireNonNull(status, "status");
         players = players == null ? List.of() : List.copyOf(players);
         Objects.requireNonNull(mystery, "mystery");
+        currentPlayer = currentPlayer == null ? "" : currentPlayer;
+        if (turn < 0) {
+            throw new IllegalArgumentException("turn must not be negative");
+        }
+        lastAction = lastAction == null ? "" : lastAction;
+    }
+
+    /** Compatibility constructor for snapshots created before turn metadata is available. */
+    public GameSnapshotDto(
+            UUID sessionId,
+            long version,
+            int round,
+            SessionStatus status,
+            List<PlayerDto> players,
+            MysteryDto mystery) {
+        this(sessionId, version, round, status, players, mystery, "", 0, "");
     }
 
     /** Immutable player view nested to keep the protocol surface compact. */
