@@ -1,0 +1,43 @@
+LUDO-T Assignment 2 - Work 05 verification
+Date: 2026-09-19
+Runtime: OpenJDK Temurin 26.0.2.1
+
+Compilation
+-----------
+Java 26 production compilation passed for:
+- game-core
+- protocol
+- server-app
+- client-app
+
+All corresponding test sources compiled, including JdbcGameRepositoryIT.
+
+Database-independent automated tests
+------------------------------------
+JUnit containers found:      44
+JUnit containers skipped:    1 (JdbcGameRepositoryIT)
+JUnit containers successful: 43
+Tests found:                 144
+Tests started:               138
+Tests successful:            138
+Tests skipped:               6 (local MySQL profile)
+Tests failed:                0
+Tests aborted:               0
+
+The completed ZIP was extracted into a clean directory. The production and test sources compiled
+again with Java 26, and the same 138-test result passed from the extracted copy.
+
+Boundary checks
+---------------
+- java.sql imports occur only in server-app production/test persistence code.
+- Connector/J is declared only by server-app.
+- client-app, protocol, game-core and test-client contain no database URL or credential keys.
+- No Docker, Testcontainers, H2, SQLite, JPA/Hibernate, Spring Data/JDBC or HikariCP was added.
+- SQL setup/reset/query scripts are included under database/.
+
+Local MySQL status
+------------------
+The execution environment used for this checkpoint does not contain a MySQL server and cannot
+download Maven artifacts from Central. Therefore the six opt-in integration cases were compiled
+but not executed. Run `.\mvnw.cmd -Pmysql-it clean test` against the local `ludot_test` schema
+before checker approval and record the MySQL version/output.

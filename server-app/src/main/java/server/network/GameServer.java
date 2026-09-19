@@ -12,6 +12,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import server.ServerConfig;
 import server.application.GameService;
+import server.application.port.GameRepository;
 
 /** Accepts independent persistent client connections for the standalone server process. */
 public final class GameServer implements AutoCloseable {
@@ -26,6 +27,10 @@ public final class GameServer implements AutoCloseable {
 
     public GameServer(ServerConfig config) {
         this(config, new RequestDispatcher(new GameService(config)));
+    }
+
+    public GameServer(ServerConfig config, GameRepository repository) {
+        this(config, new RequestDispatcher(new GameService(config, repository)));
     }
 
     GameServer(ServerConfig config, RequestDispatcher dispatcher) {
