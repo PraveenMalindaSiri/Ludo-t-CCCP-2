@@ -86,10 +86,7 @@ class ServerConnectionTest {
                             RequestMessage connect = connection.readRequest();
                             connection.respond(connect, "CONNECTED");
                             connection.write(
-                                    response(
-                                            UUID.randomUUID(),
-                                            connect.clientId(),
-                                            "unknown"));
+                                    response(UUID.randomUUID(), connect.clientId(), "unknown"));
                             RequestMessage ping = connection.readRequest();
                             connection.respond(ping, "PONG");
                         })) {
@@ -104,13 +101,7 @@ class ServerConnectionTest {
 
     private ClientConfig config(int port) {
         return new ClientConfig(
-                "127.0.0.1",
-                port,
-                64,
-                JsonLineCodec.DEFAULT_MAX_LINE_LENGTH,
-                2_000,
-                2_000,
-                20);
+                "127.0.0.1", port, 64, JsonLineCodec.DEFAULT_MAX_LINE_LENGTH, 2_000, 2_000, 20);
     }
 
     private ResponseMessage response(UUID requestId, UUID clientId, String message) {
@@ -183,8 +174,7 @@ class ServerConnectionTest {
             socket.setSoTimeout(3_000);
             reader =
                     new BoundedLineReader(
-                            new InputStreamReader(
-                                    socket.getInputStream(), StandardCharsets.UTF_8),
+                            new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8),
                             JsonLineCodec.DEFAULT_MAX_LINE_LENGTH);
             writer =
                     new BufferedWriter(

@@ -8,11 +8,29 @@ import protocol.MessageKind;
 import protocol.RequestMessage;
 import protocol.RequestType;
 import protocol.ResponseMessage;
+import server.ServerConfig;
+import server.application.GameService;
+import server.application.port.SessionSubscriber;
 
-/** Handles only the connection-level operations included in Work 02. */
-public final class RequestDispatcher {
+/** Validates connection-level rules and routes game operations to the application service. */
+public final class RequestDispatcher implements AutoCloseable {
+
+    private final GameService games;
+
+    public RequestDispatcher() {
+        this(new GameService(ServerConfig.defaultsForPort(0)));
+    }
+
+    public RequestDispatcher(GameService games) {
+        this.games = games;
+    }
 
     public DispatchResult dispatch(RequestMessage request, UUID registeredClientId) {
+        return dispatch(request, registeredClientId, null);
+    }
+
+    public DispatchResult dispatch(
+            RequestMessage request, UUID registeredClientId, SessionSubscriber subscriber) {
         if (request.protocolVersion() != RequestMessage.CURRENT_PROTOCOL_VERSION) {
             return failure(
                     request,
@@ -54,23 +72,32 @@ public final class RequestDispatcher {
 
         return switch (request.requestType()) {
             case PING -> success(request, "PONG", List.of(), false, registeredClientId);
-            case LIST_SESSIONS ->
-                    success(
-                            request,
-                            "No sessions are available yet",
-                            List.of(),
-                            false,
-                            registeredClientId);
             case DISCONNECT ->
                     success(request, "Disconnected", List.of(), true, registeredClientId);
-            default ->
-                    failure(
-                            request,
-                            ErrorCode.INVALID_REQUEST,
-                            request.requestType() + " is not available in Work 02",
-                            false,
-                            registeredClientId);
+            default -> dispatchGameRequest(request, registeredClientId, subscriber);
         };
+    }
+
+    public void connectionClosed(SessionSubscriber subscriber) {
+        games.connectionClosed(subscriber);
+    }
+
+    GameService games() {
+        return games;
+    }
+
+    private DispatchResult dispatchGameRequest(
+            RequestMessage request, UUID registeredClientId, SessionSubscriber subscriber) {
+        if (subscriber == null) {
+            return failure(
+                    request,
+                    ErrorCode.SERVER_ERROR,
+                    "A live connection is required for game operations",
+                    false,
+                    registeredClientId);
+        }
+        ResponseMessage response = games.handleOrEnqueue(request, subscriber, System.nanoTime());
+        return new DispatchResult(response, registeredClientId, false);
     }
 
     private DispatchResult success(
@@ -121,4 +148,9 @@ public final class RequestDispatcher {
 
     public record DispatchResult(
             ResponseMessage response, UUID registeredClientId, boolean closeAfterWrite) {}
+
+    @Override
+    public void close() {
+        games.close();
+    }
 }

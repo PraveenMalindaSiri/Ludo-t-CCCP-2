@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import server.ServerConfig;
+import server.application.GameService;
 
 /** Accepts independent persistent client connections for the standalone server process. */
 public final class GameServer implements AutoCloseable {
@@ -24,7 +25,7 @@ public final class GameServer implements AutoCloseable {
     private volatile Thread acceptThread;
 
     public GameServer(ServerConfig config) {
-        this(config, new RequestDispatcher());
+        this(config, new RequestDispatcher(new GameService(config)));
     }
 
     GameServer(ServerConfig config, RequestDispatcher dispatcher) {
@@ -61,7 +62,8 @@ public final class GameServer implements AutoCloseable {
     }
 
     public boolean allConnectionThreadsAreVirtual() {
-        return connections.values().stream().allMatch(ClientConnection::networkingThreadsAreVirtual);
+        return connections.values().stream()
+                .allMatch(ClientConnection::networkingThreadsAreVirtual);
     }
 
     public void awaitTermination() throws InterruptedException {
@@ -112,6 +114,7 @@ public final class GameServer implements AutoCloseable {
         }
         connections.values().forEach(ClientConnection::close);
         connections.clear();
+        dispatcher.close();
         Thread thread = acceptThread;
         if (thread != null && thread != Thread.currentThread()) {
             thread.interrupt();

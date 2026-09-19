@@ -20,7 +20,7 @@ public final class MainFrame extends JFrame implements ClientController.View {
     private final JPanel content = new JPanel(cards);
     private final ConnectionPanel connectionPanel;
     private final LobbyPanel lobbyPanel;
-    private final GamePanel gamePanel = new GamePanel();
+    private final GamePanel gamePanel;
 
     public MainFrame(ClientController controller, String defaultHost, int defaultPort) {
         super("LUDO-T Client");
@@ -34,7 +34,18 @@ public final class MainFrame extends JFrame implements ClientController.View {
                 new LobbyPanel(
                         controller::refreshSessions,
                         controller::ping,
+                        controller::createSession,
+                        controller::joinSession,
                         controller::disconnect);
+        gamePanel =
+                new GamePanel(
+                        controller::startGame,
+                        controller::pauseGame,
+                        controller::resumeGame,
+                        controller::stepGame,
+                        controller::stopGame,
+                        controller::setSpeed,
+                        controller::leaveSession);
         content.add(connectionPanel, CONNECTION);
         content.add(lobbyPanel, LOBBY);
         content.add(gamePanel, GAME);

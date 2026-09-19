@@ -11,17 +11,58 @@ public final class BoardGeometry {
 
     private static final List<Point> STANDARD_PATH =
             List.of(
-                    point(6, 13), point(6, 12), point(6, 11), point(6, 10), point(6, 9),
-                    point(5, 8), point(4, 8), point(3, 8), point(2, 8), point(1, 8),
-                    point(0, 8), point(0, 7), point(0, 6), point(1, 6), point(2, 6),
-                    point(3, 6), point(4, 6), point(5, 6), point(6, 5), point(6, 4),
-                    point(6, 3), point(6, 2), point(6, 1), point(6, 0), point(7, 0),
-                    point(8, 0), point(8, 1), point(8, 2), point(8, 3), point(8, 4),
-                    point(8, 5), point(9, 6), point(10, 6), point(11, 6), point(12, 6),
-                    point(13, 6), point(14, 6), point(14, 7), point(14, 8), point(13, 8),
-                    point(12, 8), point(11, 8), point(10, 8), point(9, 8), point(8, 9),
-                    point(8, 10), point(8, 11), point(8, 12), point(8, 13), point(8, 14),
-                    point(7, 14), point(6, 14));
+                    point(6, 13),
+                    point(6, 12),
+                    point(6, 11),
+                    point(6, 10),
+                    point(6, 9),
+                    point(5, 8),
+                    point(4, 8),
+                    point(3, 8),
+                    point(2, 8),
+                    point(1, 8),
+                    point(0, 8),
+                    point(0, 7),
+                    point(0, 6),
+                    point(1, 6),
+                    point(2, 6),
+                    point(3, 6),
+                    point(4, 6),
+                    point(5, 6),
+                    point(6, 5),
+                    point(6, 4),
+                    point(6, 3),
+                    point(6, 2),
+                    point(6, 1),
+                    point(6, 0),
+                    point(7, 0),
+                    point(8, 0),
+                    point(8, 1),
+                    point(8, 2),
+                    point(8, 3),
+                    point(8, 4),
+                    point(8, 5),
+                    point(9, 6),
+                    point(10, 6),
+                    point(11, 6),
+                    point(12, 6),
+                    point(13, 6),
+                    point(14, 6),
+                    point(14, 7),
+                    point(14, 8),
+                    point(13, 8),
+                    point(12, 8),
+                    point(11, 8),
+                    point(10, 8),
+                    point(9, 8),
+                    point(8, 9),
+                    point(8, 10),
+                    point(8, 11),
+                    point(8, 12),
+                    point(8, 13),
+                    point(8, 14),
+                    point(7, 14),
+                    point(6, 14));
 
     private BoardGeometry() {}
 
@@ -40,14 +81,12 @@ public final class BoardGeometry {
             return standardCell(parseIndex(normalizedPosition, "CELL_"));
         }
         if (normalizedPosition.startsWith("HOME_STRAIGHT_")) {
-            return homeStraight(
-                    normalizedColor, parseIndex(normalizedPosition, "HOME_STRAIGHT_"));
+            return homeStraight(normalizedColor, parseIndex(normalizedPosition, "HOME_STRAIGHT_"));
         }
         String coreHomePathPrefix = normalizedColor + "HOMEPATH";
         if (normalizedPosition.startsWith(coreHomePathPrefix)) {
             return homeStraight(
-                    normalizedColor,
-                    parseIndex(normalizedPosition, coreHomePathPrefix));
+                    normalizedColor, parseIndex(normalizedPosition, coreHomePathPrefix));
         }
         if (normalizedPosition.equals("HOME")) {
             return home(normalizedColor);

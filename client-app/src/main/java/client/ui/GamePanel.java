@@ -13,7 +13,7 @@ import protocol.GameSnapshotDto;
 public final class GamePanel extends JPanel {
 
     private final BoardPanel board = new BoardPanel();
-    private final ControlPanel controls = new ControlPanel();
+    private final ControlPanel controls;
     private final EventLogPanel eventLog = new EventLogPanel();
     private final JLabel session = new JLabel();
     private final JLabel status = new JLabel();
@@ -24,7 +24,27 @@ public final class GamePanel extends JPanel {
     private final JLabel lastAction = new JLabel();
 
     public GamePanel() {
+        this(() -> {}, () -> {}, () -> {}, () -> {}, () -> {}, ignored -> {}, () -> {});
+    }
+
+    public GamePanel(
+            Runnable startAction,
+            Runnable pauseAction,
+            Runnable resumeAction,
+            Runnable stepAction,
+            Runnable stopAction,
+            java.util.function.LongConsumer speedAction,
+            Runnable leaveAction) {
         super(new BorderLayout(10, 10));
+        controls =
+                new ControlPanel(
+                        startAction,
+                        pauseAction,
+                        resumeAction,
+                        stepAction,
+                        stopAction,
+                        speedAction,
+                        leaveAction);
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         add(board, BorderLayout.CENTER);
 

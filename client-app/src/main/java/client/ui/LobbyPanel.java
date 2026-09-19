@@ -3,26 +3,51 @@ package client.ui;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import protocol.SessionSummaryDto;
 
-/** Session lobby shell; creation and joining are intentionally deferred to Work 03. */
+/** Session lobby backed by server-confirmed create, list and join operations. */
 public final class LobbyPanel extends JPanel {
 
-    private final DefaultListModel<String> sessionsModel = new DefaultListModel<>();
+    private final DefaultListModel<SessionSummaryDto> sessionsModel = new DefaultListModel<>();
+    private final JList<SessionSummaryDto> sessionsList = new JList<>(sessionsModel);
     private final JLabel statusLabel = new JLabel("Lobby");
 
-    public LobbyPanel(Runnable refreshAction, Runnable pingAction, Runnable disconnectAction) {
+    public LobbyPanel(
+            Runnable refreshAction,
+            Runnable pingAction,
+            Consumer<String> createAction,
+            Consumer<UUID> joinAction,
+            Runnable disconnectAction) {
         super(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
         add(statusLabel, BorderLayout.NORTH);
-        add(new JScrollPane(new JList<>(sessionsModel)), BorderLayout.CENTER);
+        sessionsList.setCellRenderer(
+                (list, value, index, selected, focused) -> {
+                    JLabel label = new JLabel();
+                    label.setOpaque(true);
+                    label.setText(
+                            value.name()
+                                    + " - "
+                                    + value.status()
+                                    + " - clients: "
+                                    + value.connectedClients());
+                    label.setBackground(
+                            selected ? list.getSelectionBackground() : list.getBackground());
+                    label.setForeground(
+                            selected ? list.getSelectionForeground() : list.getForeground());
+                    return label;
+                });
+        add(new JScrollPane(sessionsList), BorderLayout.CENTER);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton refresh = new JButton("Refresh sessions");
@@ -30,12 +55,27 @@ public final class LobbyPanel extends JPanel {
         JButton create = new JButton("Create session");
         JButton join = new JButton("Join selected");
         JButton disconnect = new JButton("Disconnect");
-        create.setEnabled(false);
-        join.setEnabled(false);
-        create.setToolTipText("Session creation is added in Work 03");
-        join.setToolTipText("Session joining is added in Work 03");
         refresh.addActionListener(ignored -> refreshAction.run());
         ping.addActionListener(ignored -> pingAction.run());
+        create.addActionListener(
+                ignored -> {
+                    String name =
+                            JOptionPane.showInputDialog(
+                                    this,
+                                    "Session name:",
+                                    "Create session",
+                                    JOptionPane.PLAIN_MESSAGE);
+                    if (name != null && !name.isBlank()) {
+                        createAction.accept(name);
+                    }
+                });
+        join.addActionListener(
+                ignored -> {
+                    SessionSummaryDto selected = sessionsList.getSelectedValue();
+                    if (selected != null) {
+                        joinAction.accept(selected.sessionId());
+                    }
+                });
         disconnect.addActionListener(ignored -> disconnectAction.run());
         actions.add(refresh);
         actions.add(ping);
@@ -47,17 +87,8 @@ public final class LobbyPanel extends JPanel {
 
     public void render(List<SessionSummaryDto> sessions, String lastAction) {
         sessionsModel.clear();
-        sessions.forEach(
-                session ->
-                        sessionsModel.addElement(
-                                session.name()
-                                        + " - "
-                                        + session.status()
-                                        + " - clients: "
-                                        + session.connectedClients()));
-        if (sessions.isEmpty()) {
-            sessionsModel.addElement("No sessions available");
-        }
-        statusLabel.setText(lastAction == null || lastAction.isBlank() ? "Lobby" : lastAction);
+        sessions.forEach(sessionsModel::addElement);
+        String defaultText = sessions.isEmpty() ? "Lobby - no sessions available" : "Lobby";
+        statusLabel.setText(lastAction == null || lastAction.isBlank() ? defaultText : lastAction);
     }
 }
