@@ -1,10 +1,8 @@
 package server.session;
 
 import engine.GameEngine;
-import event.GameSnapshot;
 import factory.GameFactory;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -16,6 +14,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import protocol.ErrorCode;
+import protocol.EventMessage;
+import protocol.EventType;
 import protocol.GameSnapshotDto;
 import protocol.MessageKind;
 import protocol.RequestMessage;
@@ -24,6 +24,8 @@ import protocol.ResponseMessage;
 import protocol.SessionStatus;
 import protocol.SessionSummaryDto;
 import server.application.port.SessionSubscriber;
+import server.session.GameEventCollector.EventBatch;
+import server.session.SnapshotMapper.SessionMetadata;
 
 /** Owns one isolated game, one bounded request queue and exactly one mutation worker. */
 public final class GameSession implements AutoCloseable {
@@ -34,6 +36,8 @@ public final class GameSession implements AutoCloseable {
     private final UUID sessionId;
     private final String name;
     private final GameEngine engine;
+    private final GameEventCollector eventCollector = new GameEventCollector();
+    private final SnapshotMapper snapshotMapper = new SnapshotMapper();
     private final BlockingQueue<RequestEnvelope> requests;
     private final Set<SessionSubscriber> subscribers = ConcurrentHashMap.newKeySet();
     private final Instant createdAt = Instant.now();
@@ -50,6 +54,8 @@ public final class GameSession implements AutoCloseable {
     private volatile Instant completedAt;
     private volatile Throwable startupFailure;
     private String lastAction = "Session created";
+    private Integer lastDice;
+    private String lastResult = "";
     private long nextTurnDeadlineNanos;
 
     public GameSession(
@@ -83,6 +89,7 @@ public final class GameSession implements AutoCloseable {
         }
         this.name = name.trim();
         this.engine = Objects.requireNonNull(engine, "engine");
+        this.engine.addEventListener(eventCollector);
         this.requests = new ArrayBlockingQueue<>(queueCapacity);
         this.turnDelayMillis = defaultTurnDelayMillis;
         if (startWorker) {
@@ -164,7 +171,9 @@ public final class GameSession implements AutoCloseable {
 
     private void runLoop() {
         try {
+            eventCollector.beginOperation();
             engine.initializeGame();
+            updateLatestEventMetadata(eventCollector.drain());
             refreshSnapshot();
             ready.countDown();
             while (!closing.get()) {
@@ -193,6 +202,7 @@ public final class GameSession implements AutoCloseable {
                     refreshSnapshot();
                 }
             }
+            engine.removeEventListener(eventCollector);
             failPendingRequests();
         }
     }
@@ -209,10 +219,24 @@ public final class GameSession implements AutoCloseable {
     }
 
     private void process(RequestEnvelope envelope) {
+        eventCollector.beginOperation();
         try {
-            ResponseMessage response = handle(envelope.request(), envelope.subscriber());
+            HandleResult result = handle(envelope.request(), envelope.subscriber());
+            EventBatch events = eventCollector.drain();
+            updateLatestEventMetadata(events);
+            if (result.success() && result.withSnapshot()) {
+                refreshSnapshot();
+            }
+            ResponseMessage response =
+                    result.success()
+                            ? success(envelope.request(), result.message(), result.withSnapshot())
+                            : failure(envelope.request(), result.errorCode(), result.message());
             envelope.complete(response);
+            if (result.success() && result.stateMutated()) {
+                broadcast(events.events());
+            }
         } catch (RuntimeException failure) {
+            eventCollector.drain();
             envelope.complete(
                     failure(
                             envelope.request(),
@@ -221,124 +245,115 @@ public final class GameSession implements AutoCloseable {
         }
     }
 
-    private ResponseMessage handle(RequestMessage request, SessionSubscriber subscriber) {
+    private HandleResult handle(RequestMessage request, SessionSubscriber subscriber) {
         if (request.requestType() != RequestType.JOIN_SESSION
                 && !subscribers.contains(subscriber)) {
-            return failure(
-                    request,
-                    ErrorCode.INVALID_STATE,
-                    "Join the session before requesting game operations");
+            return rejected(
+                    ErrorCode.INVALID_STATE, "Join the session before requesting game operations");
         }
         return switch (request.requestType()) {
-            case JOIN_SESSION -> join(request, subscriber);
-            case LEAVE_SESSION -> leave(request, subscriber);
-            case GET_SNAPSHOT -> success(request, "Snapshot retrieved", true);
-            case START_GAME -> start(request);
-            case PAUSE_GAME -> pause(request);
-            case RESUME_GAME -> resume(request);
-            case STEP_GAME -> step(request);
-            case STOP_GAME -> stop(request);
+            case JOIN_SESSION -> join(subscriber);
+            case LEAVE_SESSION -> leave(subscriber);
+            case GET_SNAPSHOT -> accepted("Snapshot retrieved", true, false);
+            case START_GAME -> start();
+            case PAUSE_GAME -> pause();
+            case RESUME_GAME -> resume();
+            case STEP_GAME -> step();
+            case STOP_GAME -> stop();
             case SET_SPEED -> setSpeed(request);
             default ->
-                    failure(
-                            request,
+                    rejected(
                             ErrorCode.INVALID_REQUEST,
                             request.requestType() + " is not a session operation");
         };
     }
 
-    private ResponseMessage join(RequestMessage request, SessionSubscriber subscriber) {
+    private HandleResult join(SessionSubscriber subscriber) {
         if (!subscriber.isOpen()) {
-            return failure(request, ErrorCode.INVALID_STATE, "Connection is already closed");
+            return rejected(ErrorCode.INVALID_STATE, "Connection is already closed");
         }
         subscribers.add(subscriber);
         if (!subscriber.isOpen()) {
             subscribers.remove(subscriber);
-            return failure(request, ErrorCode.INVALID_STATE, "Connection closed while joining");
+            return rejected(ErrorCode.INVALID_STATE, "Connection closed while joining");
         }
-        return success(request, "Joined " + name, true);
+        return accepted("Joined " + name, true, false);
     }
 
-    private ResponseMessage leave(RequestMessage request, SessionSubscriber subscriber) {
+    private HandleResult leave(SessionSubscriber subscriber) {
         subscribers.remove(subscriber);
-        return success(request, "Left " + name, false);
+        return accepted("Left " + name, false, false);
     }
 
-    private ResponseMessage start(RequestMessage request) {
+    private HandleResult start() {
         if (status != SessionStatus.CREATED) {
-            return invalidState(request, "Only a created session can be started");
+            return invalidState("Only a created session can be started");
         }
         status = SessionStatus.RUNNING;
         startedAt = Instant.now();
         lastAction = "Game started";
         version++;
         nextTurnDeadlineNanos = System.nanoTime() + delayNanos();
-        refreshSnapshot();
-        return success(request, lastAction, true);
+        return accepted(lastAction, true, true);
     }
 
-    private ResponseMessage pause(RequestMessage request) {
+    private HandleResult pause() {
         if (status != SessionStatus.RUNNING) {
-            return invalidState(request, "Only a running session can be paused");
+            return invalidState("Only a running session can be paused");
         }
         status = SessionStatus.PAUSED;
         lastAction = "Game paused";
         version++;
-        refreshSnapshot();
-        return success(request, lastAction, true);
+        return accepted(lastAction, true, true);
     }
 
-    private ResponseMessage resume(RequestMessage request) {
+    private HandleResult resume() {
         if (status != SessionStatus.PAUSED) {
-            return invalidState(request, "Only a paused session can be resumed");
+            return invalidState("Only a paused session can be resumed");
         }
         status = SessionStatus.RUNNING;
         lastAction = "Game resumed";
         version++;
         nextTurnDeadlineNanos = System.nanoTime() + delayNanos();
-        refreshSnapshot();
-        return success(request, lastAction, true);
+        return accepted(lastAction, true, true);
     }
 
-    private ResponseMessage step(RequestMessage request) {
+    private HandleResult step() {
         if (status != SessionStatus.PAUSED) {
-            return invalidState(request, "Step is available only while paused");
+            return invalidState("Step is available only while paused");
         }
         advanceOneTurn("Advanced one paused turn");
-        return success(request, lastAction, true);
+        return accepted(lastAction, true, true);
     }
 
-    private ResponseMessage stop(RequestMessage request) {
+    private HandleResult stop() {
         if (status != SessionStatus.CREATED
                 && status != SessionStatus.RUNNING
                 && status != SessionStatus.PAUSED) {
-            return invalidState(request, "This session cannot be stopped");
+            return invalidState("This session cannot be stopped");
         }
         status = SessionStatus.STOPPED;
         completedAt = Instant.now();
         lastAction = "Game stopped";
         version++;
-        refreshSnapshot();
-        return success(request, lastAction, true);
+        return accepted(lastAction, true, true);
     }
 
-    private ResponseMessage setSpeed(RequestMessage request) {
+    private HandleResult setSpeed(RequestMessage request) {
         if (status != SessionStatus.CREATED
                 && status != SessionStatus.RUNNING
                 && status != SessionStatus.PAUSED) {
-            return invalidState(request, "Speed cannot be changed in this session state");
+            return invalidState("Speed cannot be changed in this session state");
         }
         String raw = request.parameters().get("turnDelayMillis");
         final long requestedDelay;
         try {
             requestedDelay = Long.parseLong(raw);
         } catch (NumberFormatException exception) {
-            return failure(
-                    request, ErrorCode.INVALID_REQUEST, "turnDelayMillis must be an integer");
+            return rejected(ErrorCode.INVALID_REQUEST, "turnDelayMillis must be an integer");
         }
         if (requestedDelay < MIN_TURN_DELAY_MILLIS || requestedDelay > MAX_TURN_DELAY_MILLIS) {
-            return failure(
-                    request,
+            return rejected(
                     ErrorCode.INVALID_REQUEST,
                     "turnDelayMillis must be between "
                             + MIN_TURN_DELAY_MILLIS
@@ -351,12 +366,16 @@ public final class GameSession implements AutoCloseable {
         if (status == SessionStatus.RUNNING) {
             nextTurnDeadlineNanos = System.nanoTime() + delayNanos();
         }
-        refreshSnapshot();
-        return success(request, lastAction, true);
+        return accepted(lastAction, true, true);
     }
 
     private void advanceAutomatically() {
+        eventCollector.beginOperation();
         advanceOneTurn("Automatic turn completed");
+        EventBatch events = eventCollector.drain();
+        updateLatestEventMetadata(events);
+        refreshSnapshot();
+        broadcast(events.events());
         if (status == SessionStatus.RUNNING) {
             nextTurnDeadlineNanos = System.nanoTime() + delayNanos();
         }
@@ -372,40 +391,74 @@ public final class GameSession implements AutoCloseable {
             completedAt = Instant.now();
             lastAction = "Game completed";
         }
-        refreshSnapshot();
+    }
+
+    private void updateLatestEventMetadata(EventBatch batch) {
+        if (batch.latestDice() != null) {
+            lastDice = batch.latestDice();
+        }
+        if (!batch.latestResult().isBlank()) {
+            lastResult = batch.latestResult();
+        }
     }
 
     private void refreshSnapshot() {
-        GameSnapshot core = engine.getSnapshot();
-        List<GameSnapshotDto.PlayerDto> players = new ArrayList<>();
-        for (GameSnapshot.PlayerView player : core.getPlayers()) {
-            List<GameSnapshotDto.PieceDto> pieces = new ArrayList<>();
-            for (GameSnapshot.PieceView piece : player.getPieces()) {
-                pieces.add(
-                        new GameSnapshotDto.PieceDto(
-                                piece.getName(), piece.getFullName(), piece.getPosition()));
-            }
-            players.add(
-                    new GameSnapshotDto.PlayerDto(
-                            player.getColor(),
-                            player.getBoardCount(),
-                            player.getBaseCount(),
-                            pieces));
-        }
         latestSnapshot =
-                new GameSnapshotDto(
+                snapshotMapper.map(
+                        engine.getSnapshot(),
+                        new SessionMetadata(
+                                sessionId,
+                                version,
+                                status,
+                                turn,
+                                turnDelayMillis,
+                                lastAction,
+                                lastDice,
+                                lastResult,
+                                requests.size()));
+    }
+
+    private void broadcast(List<String> gameEvents) {
+        if (!gameEvents.isEmpty()) {
+            offerToSubscribers(
+                    new EventMessage(
+                            RequestMessage.CURRENT_PROTOCOL_VERSION,
+                            MessageKind.EVENT,
+                            UUID.randomUUID(),
+                            sessionId,
+                            EventType.GAME_EVENT_BATCH,
+                            version,
+                            "Game events",
+                            gameEvents,
+                            null,
+                            Instant.now()));
+        }
+        EventType type =
+                status == SessionStatus.COMPLETED
+                        ? EventType.SESSION_COMPLETED
+                        : status == SessionStatus.STOPPED
+                                ? EventType.SESSION_STOPPED
+                                : EventType.SESSION_UPDATED;
+        offerToSubscribers(
+                new EventMessage(
+                        RequestMessage.CURRENT_PROTOCOL_VERSION,
+                        MessageKind.EVENT,
+                        UUID.randomUUID(),
                         sessionId,
+                        type,
                         version,
-                        core.getRound(),
-                        status,
-                        players,
-                        new GameSnapshotDto.MysteryDto(
-                                core.isMysteryActive(),
-                                core.getMysteryPosition(),
-                                core.getMysteryRoundsRemaining()),
-                        "",
-                        turn,
-                        lastAction);
+                        lastAction,
+                        List.of(),
+                        latestSnapshot,
+                        Instant.now()));
+    }
+
+    private void offerToSubscribers(EventMessage message) {
+        for (SessionSubscriber subscriber : subscribers) {
+            if (!subscriber.isOpen() || !subscriber.offer(message)) {
+                subscribers.remove(subscriber);
+            }
+        }
     }
 
     private ResponseMessage success(RequestMessage request, String message, boolean withSnapshot) {
@@ -424,10 +477,6 @@ public final class GameSession implements AutoCloseable {
                 Instant.now());
     }
 
-    private ResponseMessage invalidState(RequestMessage request, String message) {
-        return failure(request, ErrorCode.INVALID_STATE, message);
-    }
-
     private ResponseMessage failure(RequestMessage request, ErrorCode code, String message) {
         return new ResponseMessage(
                 RequestMessage.CURRENT_PROTOCOL_VERSION,
@@ -442,6 +491,18 @@ public final class GameSession implements AutoCloseable {
                 List.of(),
                 latestSnapshot,
                 Instant.now());
+    }
+
+    private HandleResult accepted(String message, boolean withSnapshot, boolean stateMutated) {
+        return new HandleResult(true, null, message, withSnapshot, stateMutated);
+    }
+
+    private HandleResult rejected(ErrorCode code, String message) {
+        return new HandleResult(false, code, message, true, false);
+    }
+
+    private HandleResult invalidState(String message) {
+        return rejected(ErrorCode.INVALID_STATE, message);
     }
 
     private long delayNanos() {
@@ -473,4 +534,11 @@ public final class GameSession implements AutoCloseable {
             worker.interrupt();
         }
     }
+
+    private record HandleResult(
+            boolean success,
+            ErrorCode errorCode,
+            String message,
+            boolean withSnapshot,
+            boolean stateMutated) {}
 }

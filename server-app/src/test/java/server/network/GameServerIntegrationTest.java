@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import protocol.BoundedLineReader;
 import protocol.JsonLineCodec;
+import protocol.MessageKind;
 import protocol.RequestMessage;
 import protocol.RequestType;
 import protocol.ResponseMessage;
@@ -198,7 +199,13 @@ class GameServerIntegrationTest {
         }
 
         private ResponseMessage readResponse() throws Exception {
-            return codec.decode(readLine(), ResponseMessage.class);
+            String line;
+            while ((line = readLine()) != null) {
+                if (codec.decodeKind(line) == MessageKind.RESPONSE) {
+                    return codec.decode(line, ResponseMessage.class);
+                }
+            }
+            throw new AssertionError("Connection closed before a response arrived");
         }
 
         private String readLine() throws Exception {

@@ -237,7 +237,7 @@ class GameSessionTest {
     private static final class RecordingSubscriber implements SessionSubscriber {
 
         private final UUID id = UUID.randomUUID();
-        private final LinkedBlockingQueue<ResponseMessage> responses = new LinkedBlockingQueue<>();
+        private final LinkedBlockingQueue<Object> messages = new LinkedBlockingQueue<>();
 
         @Override
         public UUID connectionId() {
@@ -246,15 +246,18 @@ class GameSessionTest {
 
         @Override
         public boolean offer(Object message) {
-            return responses.offer((ResponseMessage) message);
+            return messages.offer(message);
         }
 
         private ResponseMessage take() throws InterruptedException {
-            ResponseMessage response = responses.poll(3, TimeUnit.SECONDS);
-            if (response == null) {
-                throw new AssertionError("Timed out waiting for session response");
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
+            while (System.nanoTime() < deadline) {
+                Object message = messages.poll(100, TimeUnit.MILLISECONDS);
+                if (message instanceof ResponseMessage response) {
+                    return response;
+                }
             }
-            return response;
+            throw new AssertionError("Timed out waiting for session response");
         }
     }
 }

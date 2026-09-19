@@ -16,14 +16,10 @@ import org.junit.jupiter.api.Test;
 
 class JsonLineCodecTest {
 
-    private static final UUID REQUEST_ID =
-            UUID.fromString("11111111-1111-1111-1111-111111111111");
-    private static final UUID CLIENT_ID =
-            UUID.fromString("22222222-2222-2222-2222-222222222222");
-    private static final UUID SESSION_ID =
-            UUID.fromString("33333333-3333-3333-3333-333333333333");
-    private static final UUID EVENT_ID =
-            UUID.fromString("44444444-4444-4444-4444-444444444444");
+    private static final UUID REQUEST_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    private static final UUID CLIENT_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
+    private static final UUID SESSION_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    private static final UUID EVENT_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
     private static final Instant TIME = Instant.parse("2026-09-18T12:30:45Z");
 
     private final JsonLineCodec codec = new JsonLineCodec();
@@ -102,16 +98,10 @@ class JsonLineCodecTest {
         String json =
                 codec.encode(
                         RequestMessage.create(
-                                REQUEST_ID,
-                                CLIENT_ID,
-                                RequestType.PING,
-                                null,
-                                null,
-                                TIME));
+                                REQUEST_ID, CLIENT_ID, RequestType.PING, null, null, TIME));
 
         assertTrue(json.contains("\"sentAt\":\"2026-09-18T12:30:45Z\""));
-        assertEquals(
-                TIME, codec.decode(json, RequestMessage.class).sentAt());
+        assertEquals(TIME, codec.decode(json, RequestMessage.class).sentAt());
     }
 
     @Test
@@ -166,26 +156,16 @@ class JsonLineCodecTest {
     @Test
     void malformedJsonAndTrailingTokensAreRejectedClearly() {
         assertThrows(
-                ProtocolException.class,
-                () -> codec.decode("{not-json}", RequestMessage.class));
-        assertThrows(
-                ProtocolException.class,
-                () -> codec.decode("{} {}", RequestMessage.class));
-        assertThrows(
-                ProtocolException.class,
-                () -> codec.decode("", RequestMessage.class));
+                ProtocolException.class, () -> codec.decode("{not-json}", RequestMessage.class));
+        assertThrows(ProtocolException.class, () -> codec.decode("{} {}", RequestMessage.class));
+        assertThrows(ProtocolException.class, () -> codec.decode("", RequestMessage.class));
     }
 
     @Test
     void unsupportedOrIncorrectMessageKindIsRejected() throws Exception {
         RequestMessage request =
                 RequestMessage.create(
-                        REQUEST_ID,
-                        CLIENT_ID,
-                        RequestType.PING,
-                        null,
-                        Map.of(),
-                        TIME);
+                        REQUEST_ID, CLIENT_ID, RequestType.PING, null, Map.of(), TIME);
         String valid = codec.encode(request);
 
         assertThrows(
@@ -208,17 +188,11 @@ class JsonLineCodecTest {
         parameters.put("name", "Game One");
         RequestMessage request =
                 RequestMessage.create(
-                        REQUEST_ID,
-                        CLIENT_ID,
-                        RequestType.CREATE_SESSION,
-                        null,
-                        parameters,
-                        TIME);
+                        REQUEST_ID, CLIENT_ID, RequestType.CREATE_SESSION, null, parameters, TIME);
 
         List<GameSnapshotDto.PieceDto> pieces = new ArrayList<>();
         pieces.add(new GameSnapshotDto.PieceDto("Y1", "Yellow piece 1", "BASE"));
-        GameSnapshotDto.PlayerDto player =
-                new GameSnapshotDto.PlayerDto("Yellow", 0, 4, pieces);
+        GameSnapshotDto.PlayerDto player = new GameSnapshotDto.PlayerDto("Yellow", 0, 4, pieces);
 
         parameters.put("name", "Changed");
         pieces.add(new GameSnapshotDto.PieceDto("Y2", "Yellow piece 2", "BASE"));
@@ -232,9 +206,7 @@ class JsonLineCodecTest {
                 UnsupportedOperationException.class,
                 () ->
                         player.pieces()
-                                .add(
-                                        new GameSnapshotDto.PieceDto(
-                                                "Y3", "Yellow piece 3", "BASE")));
+                                .add(new GameSnapshotDto.PieceDto("Y3", "Yellow piece 3", "BASE")));
     }
 
     @Test

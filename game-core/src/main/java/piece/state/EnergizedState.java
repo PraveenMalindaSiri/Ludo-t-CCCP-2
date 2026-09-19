@@ -50,6 +50,7 @@ public class EnergizedState implements IPieceState {
         return this;
     }
 
+    @Override
     public int getRoundsRemaining() {
         return roundsRemaining;
     }
