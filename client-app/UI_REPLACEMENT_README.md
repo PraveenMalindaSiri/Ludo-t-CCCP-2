@@ -8,6 +8,7 @@ This folder is a drop-in replacement for the existing `client-app` module.
 - Simplified LUDO-T connection screen with clear server and client status.
 - Detailed session lobby with status, client count, version and creation time.
 - Live-game dashboard with status pills, metrics, player cards and tabs.
+- One-click copying of the complete session UUID for rapid-client commands.
 - Assignment 1-aligned board painting: Green/Yellow/Red/Blue bases, clockwise numbering from Yellow X, coloured approach circles, Alpha/Beta/Gamma teleport destinations, active-player outlines and temporary mystery-cell styling.
 - Restyled simulation controls and live activity view.
 

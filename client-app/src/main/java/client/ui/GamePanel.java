@@ -3,16 +3,23 @@ package client.ui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridLayout;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
+import javax.swing.Timer;
 import protocol.GameSnapshotDto;
 
 /** Detailed live-game dashboard built entirely from transport-safe protocol DTOs. */
@@ -21,8 +28,10 @@ public final class GamePanel extends JPanel {
     private final BoardPanel board = new BoardPanel();
     private final ControlPanel controls;
     private final EventLogPanel eventLog = new EventLogPanel();
+    private final Consumer<String> clipboardWriter;
     private final JLabel sessionId =
             AppTheme.label("Session -", AppTheme.SMALL, AppTheme.TEXT_MUTED);
+    private final JButton copySessionId = new JButton("Copy ID");
     private final JLabel action =
             AppTheme.label("Waiting for a snapshot", AppTheme.BODY, AppTheme.TEXT);
     private final JLabel placements =
@@ -43,9 +52,18 @@ public final class GamePanel extends JPanel {
     private final MetricCard queue = new MetricCard("Queue depth", AppTheme.ACCENT);
     private final JPanel players = new JPanel(new GridLayout(0, 1, 8, 8));
     private final JTextArea pieceDetails = new JTextArea(14, 30);
+    private UUID renderedSessionId;
 
     public GamePanel() {
-        this(() -> {}, () -> {}, () -> {}, () -> {}, () -> {}, ignored -> {}, () -> {});
+        this(
+                () -> {},
+                () -> {},
+                () -> {},
+                () -> {},
+                () -> {},
+                ignored -> {},
+                () -> {},
+                GamePanel::writeToSystemClipboard);
     }
 
     public GamePanel(
@@ -56,7 +74,28 @@ public final class GamePanel extends JPanel {
             Runnable stopAction,
             java.util.function.LongConsumer speedAction,
             Runnable leaveAction) {
+        this(
+                startAction,
+                pauseAction,
+                resumeAction,
+                stepAction,
+                stopAction,
+                speedAction,
+                leaveAction,
+                GamePanel::writeToSystemClipboard);
+    }
+
+    GamePanel(
+            Runnable startAction,
+            Runnable pauseAction,
+            Runnable resumeAction,
+            Runnable stepAction,
+            Runnable stopAction,
+            java.util.function.LongConsumer speedAction,
+            Runnable leaveAction,
+            Consumer<String> clipboardWriter) {
         super(new BorderLayout(16, 16));
+        this.clipboardWriter = java.util.Objects.requireNonNull(clipboardWriter, "clipboardWriter");
         setBackground(AppTheme.BACKGROUND);
         setBorder(BorderFactory.createEmptyBorder(16, 18, 16, 18));
         controls =
@@ -97,9 +136,24 @@ public final class GamePanel extends JPanel {
         JPanel title = new JPanel();
         title.setOpaque(false);
         title.setLayout(new BoxLayout(title, BoxLayout.Y_AXIS));
-        title.add(AppTheme.label("Live game", AppTheme.TITLE, AppTheme.TEXT));
+        JLabel liveGame = AppTheme.label("Live game", AppTheme.TITLE, AppTheme.TEXT);
+        liveGame.setAlignmentX(LEFT_ALIGNMENT);
+        title.add(liveGame);
         title.add(Box.createVerticalStrut(3));
-        title.add(sessionId);
+
+        AppTheme.styleButton(copySessionId, AppTheme.SURFACE_RAISED, AppTheme.TEXT_MUTED);
+        copySessionId.setFont(AppTheme.SMALL);
+        copySessionId.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        copySessionId.setEnabled(false);
+        copySessionId.setToolTipText("Copy the complete session UUID");
+        copySessionId.addActionListener(ignored -> copyRenderedSessionId());
+
+        JPanel sessionRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        sessionRow.setOpaque(false);
+        sessionRow.setAlignmentX(LEFT_ALIGNMENT);
+        sessionRow.add(sessionId);
+        sessionRow.add(copySessionId);
+        title.add(sessionRow);
 
         JPanel activity = new JPanel();
         activity.setOpaque(false);
@@ -173,11 +227,18 @@ public final class GamePanel extends JPanel {
         board.setSnapshot(snapshot);
         eventLog.setEvents(events);
         if (snapshot == null) {
+            renderedSessionId = null;
+            sessionId.setText("SESSION  -");
+            copySessionId.setText("Copy ID");
+            copySessionId.setEnabled(false);
             controls.applyStatus(null);
             return;
         }
 
+        renderedSessionId = snapshot.sessionId();
         sessionId.setText("SESSION  " + snapshot.sessionId());
+        copySessionId.setText("Copy ID");
+        copySessionId.setEnabled(true);
         status.setPill(snapshot.status().name(), AppTheme.statusColor(snapshot.status().name()));
         round.setValue(Integer.toString(snapshot.round()));
         turn.setValue(Long.toString(snapshot.turn()));
@@ -211,6 +272,42 @@ public final class GamePanel extends JPanel {
         pieceDetails.setText(pieceSummary(snapshot));
         pieceDetails.setCaretPosition(0);
         controls.applyStatus(snapshot.status());
+    }
+
+    void copyRenderedSessionId() {
+        if (renderedSessionId == null) return;
+        try {
+            clipboardWriter.accept(renderedSessionId.toString());
+            showCopyFeedback("Copied!", AppTheme.SUCCESS);
+        } catch (RuntimeException failure) {
+            showCopyFeedback("Copy failed", AppTheme.DANGER);
+            copySessionId.setToolTipText("Clipboard unavailable: " + failure.getMessage());
+        }
+    }
+
+    boolean isSessionIdCopyEnabled() {
+        return copySessionId.isEnabled();
+    }
+
+    private void showCopyFeedback(String text, Color color) {
+        copySessionId.setText(text);
+        copySessionId.setForeground(color);
+        Timer timer =
+                new Timer(
+                        1400,
+                        ignored -> {
+                            copySessionId.setText("Copy ID");
+                            copySessionId.setForeground(AppTheme.TEXT_MUTED);
+                            copySessionId.setToolTipText("Copy the complete session UUID");
+                        });
+        timer.setRepeats(false);
+        timer.start();
+    }
+
+    private static void writeToSystemClipboard(String value) {
+        Toolkit.getDefaultToolkit()
+                .getSystemClipboard()
+                .setContents(new StringSelection(value), null);
     }
 
     private void rebuildPlayers(GameSnapshotDto snapshot) {

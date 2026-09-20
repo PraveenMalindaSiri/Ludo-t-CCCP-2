@@ -36,7 +36,7 @@ try {
             "--host=$HostName",
             "--port=$Port",
             "--scenario=$Scenario",
-            "--output=$outputPath"
+            "--output=`"$outputPath`""
         )
         Start-Process -FilePath "java" -ArgumentList $arguments -PassThru -NoNewWindow
     }
@@ -45,8 +45,13 @@ try {
     $clientB = Start-RapidClient "B"
     $clientA.WaitForExit()
     $clientB.WaitForExit()
-    if ($clientA.ExitCode -ne 0 -or $clientB.ExitCode -ne 0) {
-        throw "Rapid clients failed: A=$($clientA.ExitCode), B=$($clientB.ExitCode)"
+    $clientA.Refresh()
+    $clientB.Refresh()
+    $exitA = $clientA.ExitCode
+    $exitB = $clientB.ExitCode
+    if (($null -ne $exitA -and $exitA -ne 0) -or
+        ($null -ne $exitB -and $exitB -ne 0)) {
+        throw "Rapid clients failed: A=$exitA, B=$exitB"
     }
 
     $summaries = @()

@@ -10,9 +10,9 @@ Compilation
 - all test sources: passed with JDK 26
 
 Automated tests
-- 153 tests found
-- 153 tests started
-- 153 tests successful
+- 154 tests found
+- 154 tests started
+- 154 tests successful
 - 0 tests failed
 
 Verified board mapping
@@ -26,3 +26,6 @@ Visual inspection
 - Swing dashboard rendered headlessly at 1280 x 800
 - Bases, X cells, approach circles, home straights, Alpha/Beta/Gamma symbols,
   active mystery marker, pieces, and dashboard layout were checked in the rendered image
+- Copy ID control is visible beside the complete session UUID and has a focused clipboard test
+- Rapid-client launcher quotes output paths containing spaces and tolerates Windows PowerShell's
+  unavailable child-process exit-code value before reconciling both client summary files
