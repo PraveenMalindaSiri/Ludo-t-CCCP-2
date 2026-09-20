@@ -14,6 +14,7 @@ public final class BoardPreviewMain {
     private BoardPreviewMain() {}
 
     public static void main(String[] args) {
+        AppTheme.install();
         SwingUtilities.invokeLater(
                 () -> {
                     GamePanel panel = new GamePanel();
@@ -42,7 +43,7 @@ public final class BoardPreviewMain {
                 String name = color.substring(0, 1) + (pieceIndex + 1);
                 String position =
                         pieceIndex == 0
-                                ? "CELL_" + (colorIndex * 13)
+                                ? "CELL_" + startingPosition(color)
                                 : pieceIndex == 1
                                         ? "HOME_STRAIGHT_" + colorIndex
                                         : pieceIndex == 2 ? "HOME" : "BASE";
@@ -62,5 +63,15 @@ public final class BoardPreviewMain {
                 "Blue",
                 2,
                 "Blue moved B1");
+    }
+
+    private static int startingPosition(String color) {
+        return switch (color.toUpperCase()) {
+            case "YELLOW" -> 0;
+            case "BLUE" -> 13;
+            case "RED" -> 26;
+            case "GREEN" -> 39;
+            default -> throw new IllegalArgumentException("Unknown player color " + color);
+        };
     }
 }

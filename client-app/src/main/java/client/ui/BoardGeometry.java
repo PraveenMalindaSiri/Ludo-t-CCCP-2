@@ -12,32 +12,6 @@ public final class BoardGeometry {
 
     private static final List<Point> STANDARD_PATH =
             List.of(
-                    point(6, 13),
-                    point(6, 12),
-                    point(6, 11),
-                    point(6, 10),
-                    point(6, 9),
-                    point(5, 8),
-                    point(4, 8),
-                    point(3, 8),
-                    point(2, 8),
-                    point(1, 8),
-                    point(0, 8),
-                    point(0, 7),
-                    point(0, 6),
-                    point(1, 6),
-                    point(2, 6),
-                    point(3, 6),
-                    point(4, 6),
-                    point(5, 6),
-                    point(6, 5),
-                    point(6, 4),
-                    point(6, 3),
-                    point(6, 2),
-                    point(6, 1),
-                    point(6, 0),
-                    point(7, 0),
-                    point(8, 0),
                     point(8, 1),
                     point(8, 2),
                     point(8, 3),
@@ -63,7 +37,33 @@ public final class BoardGeometry {
                     point(8, 13),
                     point(8, 14),
                     point(7, 14),
-                    point(6, 14));
+                    point(6, 14),
+                    point(6, 13),
+                    point(6, 12),
+                    point(6, 11),
+                    point(6, 10),
+                    point(6, 9),
+                    point(5, 8),
+                    point(4, 8),
+                    point(3, 8),
+                    point(2, 8),
+                    point(1, 8),
+                    point(0, 8),
+                    point(0, 7),
+                    point(0, 6),
+                    point(1, 6),
+                    point(2, 6),
+                    point(3, 6),
+                    point(4, 6),
+                    point(5, 6),
+                    point(6, 5),
+                    point(6, 4),
+                    point(6, 3),
+                    point(6, 2),
+                    point(6, 1),
+                    point(6, 0),
+                    point(7, 0),
+                    point(8, 0));
 
     private BoardGeometry() {}
 
@@ -116,10 +116,10 @@ public final class BoardGeometry {
         int xOffset = slot % 2 * 2;
         int yOffset = slot / 2 * 2;
         return switch (normalize(color)) {
-            case "RED" -> point(2 + xOffset, 2 + yOffset);
-            case "GREEN" -> point(10 + xOffset, 2 + yOffset);
-            case "YELLOW" -> point(10 + xOffset, 10 + yOffset);
-            case "BLUE" -> point(2 + xOffset, 10 + yOffset);
+            case "GREEN" -> point(2 + xOffset, 2 + yOffset);
+            case "YELLOW" -> point(10 + xOffset, 2 + yOffset);
+            case "BLUE" -> point(10 + xOffset, 10 + yOffset);
+            case "RED" -> point(2 + xOffset, 10 + yOffset);
             default -> point(2 + xOffset, 2 + yOffset);
         };
     }
@@ -127,21 +127,53 @@ public final class BoardGeometry {
     public static Point homeStraight(String color, int index) {
         int step = Math.max(0, Math.min(4, index));
         return switch (normalize(color)) {
-            case "RED" -> point(7, 1 + step);
-            case "GREEN" -> point(13 - step, 7);
-            case "YELLOW" -> point(7, 13 - step);
-            case "BLUE" -> point(1 + step, 7);
+            case "YELLOW" -> point(7, 1 + step);
+            case "BLUE" -> point(13 - step, 7);
+            case "RED" -> point(7, 13 - step);
+            case "GREEN" -> point(1 + step, 7);
             default -> point(7, 1 + step);
         };
     }
 
     public static Point home(String color) {
         return switch (normalize(color)) {
-            case "RED" -> point(7, 6);
-            case "GREEN" -> point(8, 7);
-            case "YELLOW" -> point(7, 8);
-            case "BLUE" -> point(6, 7);
+            case "YELLOW" -> point(7, 6);
+            case "BLUE" -> point(8, 7);
+            case "RED" -> point(7, 8);
+            case "GREEN" -> point(6, 7);
             default -> point(7, 7);
+        };
+    }
+
+    /** Fixed coloured X cell where each player enters the standard path. */
+    public static Point startingCell(String color) {
+        return switch (normalize(color)) {
+            case "YELLOW" -> standardCell(0);
+            case "BLUE" -> standardCell(13);
+            case "RED" -> standardCell(26);
+            case "GREEN" -> standardCell(39);
+            default -> throw new IllegalArgumentException("Unknown player color " + color);
+        };
+    }
+
+    /** Coloured circle from which a player enters its Home Straight. */
+    public static Point approachCell(String color) {
+        return switch (normalize(color)) {
+            case "YELLOW" -> standardCell(50);
+            case "BLUE" -> standardCell(11);
+            case "RED" -> standardCell(24);
+            case "GREEN" -> standardCell(37);
+            default -> throw new IllegalArgumentException("Unknown player color " + color);
+        };
+    }
+
+    /** Fixed destinations used by the Alpha, Beta and Gamma mystery effects. */
+    public static Point mysteryEffectCell(String effect) {
+        return switch (normalize(effect)) {
+            case "ALPHA" -> standardCell(6);
+            case "BETA" -> standardCell(24);
+            case "GAMMA" -> standardCell(43);
+            default -> throw new IllegalArgumentException("Unknown mystery effect " + effect);
         };
     }
 

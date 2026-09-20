@@ -22,6 +22,14 @@ class BoardTest {
         assertEquals(52, board.getStandardPath().size());
         assertSame(board.getStartingCell("yellow"), board.getCellAt(config.getYellowStart()));
         assertSame(board.getApproachCell("YELLOW"), board.getCellAt(config.getYellowApproach()));
+        assertEquals(0, board.getStartingPosition("YELLOW"));
+        assertEquals(13, board.getStartingPosition("BLUE"));
+        assertEquals(26, board.getStartingPosition("RED"));
+        assertEquals(39, board.getStartingPosition("GREEN"));
+        assertEquals(50, board.getApproachPosition("YELLOW"));
+        assertEquals(11, board.getApproachPosition("BLUE"));
+        assertEquals(24, board.getApproachPosition("RED"));
+        assertEquals(37, board.getApproachPosition("GREEN"));
         assertEquals(5, board.getHomeStraight("YELLOW").size());
         assertEquals(Piece.BASE_POSITION, board.getBaseCell("YELLOW").getPosition());
         assertEquals(Piece.HOME_POSITION, board.getHomeCell("YELLOW").getPosition());

@@ -68,6 +68,19 @@ class RuleEngineTest {
     }
 
     @Test
+    void detectsTheAssignmentOneYellowApproachBoundary() {
+        Piece beforeApproach = TestSupport.place(board, "1", "YELLOW", 49, "CLOCKWISE");
+
+        assertFalse(rules.canPassApproach(beforeApproach, 0));
+        assertTrue(rules.canPassApproach(beforeApproach, 1));
+        assertEquals(1, blockHandler.distanceFromApproach(beforeApproach));
+
+        Piece onApproach = TestSupport.place(board, "2", "YELLOW", 50, "CLOCKWISE");
+        assertTrue(rules.canPassApproach(onApproach, 1));
+        assertEquals(0, blockHandler.distanceFromApproach(onApproach));
+    }
+
+    @Test
     void clearAlternativeRemovesOnlyPathBlockedChoice() {
         Piece blocked = TestSupport.place(board, "1", "YELLOW", 0, "CLOCKWISE");
         Piece clear = TestSupport.place(board, "2", "YELLOW", 20, "CLOCKWISE");

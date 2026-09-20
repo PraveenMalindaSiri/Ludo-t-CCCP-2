@@ -1,23 +1,27 @@
 package client.ui;
 
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.util.function.LongConsumer;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import protocol.SessionStatus;
 
-/** Session controls whose actions are delegated to the protocol-only client controller. */
+/** Styled simulation controls whose actions remain delegated to the protocol client. */
 public final class ControlPanel extends JPanel {
 
-    private final JButton start = new JButton("Start");
-    private final JButton pause = new JButton("Pause");
-    private final JButton resume = new JButton("Resume");
-    private final JButton step = new JButton("Step");
-    private final JButton stop = new JButton("Stop");
-    private final JButton leave = new JButton("Leave");
+    private final JButton start = button("Start", AppTheme.SUCCESS, new Color(6, 31, 26));
+    private final JButton pause = button("Pause", AppTheme.WARNING, new Color(42, 28, 4));
+    private final JButton resume = button("Resume", AppTheme.SUCCESS, new Color(6, 31, 26));
+    private final JButton step = button("Step once", AppTheme.ACCENT, new Color(5, 24, 38));
+    private final JButton stop = button("Stop", AppTheme.DANGER, new Color(40, 8, 8));
+    private final JButton leave = button("Leave session", AppTheme.SURFACE_RAISED, AppTheme.TEXT);
     private final JComboBox<String> speed =
             new JComboBox<>(new String[] {"250 ms", "500 ms", "1000 ms"});
+    private final PillLabel status = new PillLabel("NO SESSION");
 
     public ControlPanel() {
         this(() -> {}, () -> {}, () -> {}, () -> {}, () -> {}, ignored -> {}, () -> {});
@@ -31,7 +35,21 @@ public final class ControlPanel extends JPanel {
             Runnable stopAction,
             LongConsumer speedAction,
             Runnable leaveAction) {
-        super(new FlowLayout(FlowLayout.LEFT));
+        super(new FlowLayout(FlowLayout.LEFT, 9, 9));
+        setOpaque(false);
+        setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+        start.setToolTipText("Start the automatic simulation");
+        pause.setToolTipText("Pause after the current turn");
+        resume.setToolTipText("Resume automatic turns");
+        step.setToolTipText("Execute exactly one turn while paused");
+        stop.setToolTipText("Stop this session permanently");
+        leave.setToolTipText("Return to the session lobby");
+
+        speed.setFont(AppTheme.BODY);
+        speed.setBackground(AppTheme.SURFACE_RAISED);
+        speed.setForeground(AppTheme.TEXT);
+        speed.setBorder(BorderFactory.createEmptyBorder(7, 8, 7, 8));
+
         start.addActionListener(ignored -> startAction.run());
         pause.addActionListener(ignored -> pauseAction.run());
         resume.addActionListener(ignored -> resumeAction.run());
@@ -46,30 +64,42 @@ public final class ControlPanel extends JPanel {
                         speedAction.accept(Long.parseLong(milliseconds));
                     }
                 });
+
+        add(AppTheme.label("SIMULATION", AppTheme.SMALL, AppTheme.TEXT_MUTED));
+        add(status);
         add(start);
         add(pause);
         add(resume);
         add(step);
-        add(stop);
+        add(new JLabel("Speed"));
         add(speed);
+        add(stop);
         add(leave);
         applyStatus(null);
     }
 
-    public void applyStatus(SessionStatus status) {
-        start.setEnabled(status == SessionStatus.CREATED);
-        pause.setEnabled(status == SessionStatus.RUNNING);
-        resume.setEnabled(status == SessionStatus.PAUSED);
-        step.setEnabled(status == SessionStatus.PAUSED);
+    private static JButton button(String text, Color background, Color foreground) {
+        JButton button = new JButton(text);
+        AppTheme.styleButton(button, background, foreground);
+        return button;
+    }
+
+    public void applyStatus(SessionStatus sessionStatus) {
+        start.setEnabled(sessionStatus == SessionStatus.CREATED);
+        pause.setEnabled(sessionStatus == SessionStatus.RUNNING);
+        resume.setEnabled(sessionStatus == SessionStatus.PAUSED);
+        step.setEnabled(sessionStatus == SessionStatus.PAUSED);
         stop.setEnabled(
-                status == SessionStatus.CREATED
-                        || status == SessionStatus.RUNNING
-                        || status == SessionStatus.PAUSED);
+                sessionStatus == SessionStatus.CREATED
+                        || sessionStatus == SessionStatus.RUNNING
+                        || sessionStatus == SessionStatus.PAUSED);
         speed.setEnabled(
-                status == SessionStatus.CREATED
-                        || status == SessionStatus.RUNNING
-                        || status == SessionStatus.PAUSED);
-        leave.setEnabled(status != null);
+                sessionStatus == SessionStatus.CREATED
+                        || sessionStatus == SessionStatus.RUNNING
+                        || sessionStatus == SessionStatus.PAUSED);
+        leave.setEnabled(sessionStatus != null);
+        String value = sessionStatus == null ? "NO SESSION" : sessionStatus.name();
+        status.setPill(value, AppTheme.statusColor(value));
     }
 
     public boolean isStartEnabled() {

@@ -1,6 +1,9 @@
 package client.ui;
 
 import client.model.ClientViewState;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -12,14 +15,16 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-/** Host/port form for starting and ending one persistent connection. */
+/** Polished host/port screen for starting one persistent server connection. */
 public final class ConnectionPanel extends JPanel {
 
     private final JTextField hostField;
     private final JTextField portField;
-    private final JLabel statusLabel = new JLabel();
-    private final JButton connectButton = new JButton("Connect");
-    private final JButton disconnectButton = new JButton("Disconnect");
+    private final JLabel statusText = AppTheme.label("Not connected", AppTheme.BODY, AppTheme.TEXT);
+    private final JLabel clientId = AppTheme.label("Client -", AppTheme.SMALL, AppTheme.TEXT_MUTED);
+    private final PillLabel connectionBadge = new PillLabel("OFFLINE");
+    private final JButton connectButton = new JButton("Connect to server");
+    private final JButton disconnectButton = new JButton("Cancel connection");
 
     public ConnectionPanel(
             String defaultHost,
@@ -27,32 +32,25 @@ public final class ConnectionPanel extends JPanel {
             BiConsumer<String, Integer> connectAction,
             Runnable disconnectAction) {
         super(new GridBagLayout());
-        setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
-        hostField = new JTextField(defaultHost, 18);
-        portField = new JTextField(Integer.toString(defaultPort), 8);
+        setBackground(AppTheme.BACKGROUND);
+        setBorder(BorderFactory.createEmptyBorder(28, 28, 28, 28));
+
+        hostField = new JTextField(defaultHost, 20);
+        portField = new JTextField(Integer.toString(defaultPort), 9);
+        AppTheme.styleField(hostField);
+        AppTheme.styleField(portField);
+        AppTheme.styleButton(connectButton, AppTheme.ACCENT, new Color(7, 19, 32));
+        AppTheme.styleButton(disconnectButton, AppTheme.SURFACE_RAISED, AppTheme.TEXT_MUTED);
+        connectButton.setPreferredSize(new Dimension(210, 44));
+
+        JPanel card = createConnectionCard();
+        card.setPreferredSize(new Dimension(560, 500));
 
         GridBagConstraints constraints = new GridBagConstraints();
-        constraints.insets = new Insets(7, 7, 7, 7);
-        constraints.anchor = GridBagConstraints.WEST;
         constraints.gridx = 0;
         constraints.gridy = 0;
-        add(new JLabel("Server host"), constraints);
-        constraints.gridx = 1;
-        add(hostField, constraints);
-        constraints.gridx = 0;
-        constraints.gridy = 1;
-        add(new JLabel("Server port"), constraints);
-        constraints.gridx = 1;
-        add(portField, constraints);
-        constraints.gridx = 0;
-        constraints.gridy = 2;
-        add(connectButton, constraints);
-        constraints.gridx = 1;
-        add(disconnectButton, constraints);
-        constraints.gridx = 0;
-        constraints.gridy = 3;
-        constraints.gridwidth = 2;
-        add(statusLabel, constraints);
+        constraints.insets = new Insets(30, 30, 30, 30);
+        add(card, constraints);
 
         connectButton.addActionListener(
                 ignored -> {
@@ -63,22 +61,91 @@ public final class ConnectionPanel extends JPanel {
                     } catch (NumberFormatException exception) {
                         JOptionPane.showMessageDialog(
                                 this,
-                                "Port must be a number",
-                                "Invalid port",
+                                "Enter a numeric port between 1 and 65535.",
+                                "Invalid server port",
                                 JOptionPane.ERROR_MESSAGE);
                     }
                 });
         disconnectButton.addActionListener(ignored -> disconnectAction.run());
     }
 
+    private JPanel createConnectionCard() {
+        CardPanel card = new CardPanel();
+        card.setLayout(new GridBagLayout());
+        card.setBorder(BorderFactory.createEmptyBorder(42, 42, 42, 42));
+
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.gridwidth = 2;
+        constraints.weightx = 1;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(0, 0, 6, 0);
+        JLabel brand = AppTheme.label("LUDO-T", AppTheme.DISPLAY.deriveFont(44f), AppTheme.TEXT);
+        brand.setHorizontalAlignment(JLabel.CENTER);
+        card.add(brand, constraints);
+
+        constraints.gridy++;
+        constraints.insets = new Insets(0, 0, 32, 0);
+        JLabel section = AppTheme.label("SERVER CONNECTION", AppTheme.SMALL, AppTheme.ACCENT);
+        section.setHorizontalAlignment(JLabel.CENTER);
+        card.add(section, constraints);
+
+        constraints.gridy++;
+        constraints.gridwidth = 1;
+        constraints.insets = new Insets(0, 0, 7, 10);
+        card.add(AppTheme.label("SERVER HOST", AppTheme.SMALL, AppTheme.TEXT_MUTED), constraints);
+        constraints.gridx = 1;
+        card.add(AppTheme.label("PORT", AppTheme.SMALL, AppTheme.TEXT_MUTED), constraints);
+
+        constraints.gridy++;
+        constraints.gridx = 0;
+        constraints.weightx = 1;
+        constraints.insets = new Insets(0, 0, 22, 10);
+        card.add(hostField, constraints);
+        constraints.gridx = 1;
+        constraints.weightx = 0;
+        card.add(portField, constraints);
+
+        constraints.gridy++;
+        constraints.gridx = 0;
+        constraints.gridwidth = 2;
+        constraints.insets = new Insets(0, 0, 10, 0);
+        card.add(connectButton, constraints);
+
+        constraints.gridy++;
+        card.add(disconnectButton, constraints);
+
+        JPanel status = new JPanel(new BorderLayout(10, 3));
+        status.setOpaque(false);
+        status.add(connectionBadge, BorderLayout.WEST);
+        status.add(statusText, BorderLayout.CENTER);
+        status.add(clientId, BorderLayout.SOUTH);
+        constraints.gridy++;
+        constraints.weighty = 1;
+        constraints.anchor = GridBagConstraints.SOUTH;
+        constraints.insets = new Insets(35, 0, 0, 0);
+        card.add(status, constraints);
+        return card;
+    }
+
     public void render(ClientViewState state) {
-        statusLabel.setText(state.statusText());
+        statusText.setText(state.statusText());
+        clientId.setText("Client ID  " + state.clientId());
         boolean disconnected =
                 state.connectionStatus() == ClientViewState.ConnectionStatus.DISCONNECTED;
         boolean connected = state.connectionStatus() == ClientViewState.ConnectionStatus.CONNECTED;
         hostField.setEnabled(disconnected);
         portField.setEnabled(disconnected);
         connectButton.setEnabled(disconnected);
-        disconnectButton.setEnabled(connected);
+        disconnectButton.setEnabled(!disconnected && !connected);
+
+        switch (state.connectionStatus()) {
+            case CONNECTED -> connectionBadge.setPill("ONLINE", AppTheme.SUCCESS);
+            case CONNECTING -> connectionBadge.setPill("CONNECTING", AppTheme.WARNING);
+            case DISCONNECTING -> connectionBadge.setPill("CLOSING", AppTheme.WARNING);
+            case DISCONNECTED -> connectionBadge.setPill("OFFLINE", AppTheme.DANGER);
+        }
     }
 }
