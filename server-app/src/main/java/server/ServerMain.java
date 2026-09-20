@@ -2,6 +2,7 @@ package server;
 
 import java.time.Instant;
 import server.application.port.GameRepository;
+import server.lifecycle.ShutdownCoordinator;
 import server.network.GameServer;
 import server.persistence.JdbcConnectionFactory;
 import server.persistence.JdbcGameRepository;
@@ -24,13 +25,15 @@ public final class ServerMain {
         }
 
         GameServer server = new GameServer(config, repository);
-        Runtime.getRuntime().addShutdownHook(new Thread(server::close, "server-shutdown"));
+        ShutdownCoordinator shutdown =
+                new ShutdownCoordinator(server, config.shutdownDrainMillis() + 3000);
+        Runtime.getRuntime().addShutdownHook(new Thread(shutdown, "server-shutdown-hook"));
         try {
             server.start();
             System.out.printf("LUDO-T server listening on %s:%d%n", config.host(), server.port());
             server.awaitTermination();
         } finally {
-            server.close();
+            shutdown.run();
         }
     }
 }

@@ -2,6 +2,7 @@ package server;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Properties;
 import protocol.JsonLineCodec;
@@ -13,7 +14,11 @@ public record ServerConfig(
         int outboundQueueCapacity,
         int maxLineLength,
         int sessionQueueCapacity,
-        long defaultTurnDelayMillis) {
+        long defaultTurnDelayMillis,
+        Path evidenceDirectory,
+        int evidenceQueueCapacity,
+        long shutdownDrainMillis,
+        boolean evidenceEnabled) {
 
     private static final String RESOURCE = "/server.properties";
 
@@ -27,14 +32,27 @@ public record ServerConfig(
         if (outboundQueueCapacity <= 0
                 || maxLineLength <= 0
                 || sessionQueueCapacity <= 0
-                || defaultTurnDelayMillis <= 0) {
+                || defaultTurnDelayMillis <= 0
+                || evidenceQueueCapacity <= 0
+                || shutdownDrainMillis <= 0) {
             throw new IllegalArgumentException("Server limits and delays must be positive");
         }
+        Objects.requireNonNull(evidenceDirectory, "evidenceDirectory");
     }
 
     /** Compatibility constructor retained for connection-focused tests and callers. */
     public ServerConfig(String host, int port, int outboundQueueCapacity, int maxLineLength) {
-        this(host, port, outboundQueueCapacity, maxLineLength, 64, 500);
+        this(
+                host,
+                port,
+                outboundQueueCapacity,
+                maxLineLength,
+                64,
+                500,
+                Path.of("test-results"),
+                4096,
+                5000,
+                false);
     }
 
     public static ServerConfig load() {
@@ -54,12 +72,25 @@ public record ServerConfig(
                 integerSetting(properties, "server.outboundQueueCapacity"),
                 integerSetting(properties, "server.maxLineLength"),
                 integerSetting(properties, "server.sessionQueueCapacity"),
-                longSetting(properties, "server.defaultTurnDelayMillis"));
+                longSetting(properties, "server.defaultTurnDelayMillis"),
+                Path.of(setting(properties, "server.evidenceDirectory")),
+                integerSetting(properties, "server.evidenceQueueCapacity"),
+                longSetting(properties, "server.shutdownDrainMillis"),
+                booleanSetting(properties, "server.evidenceEnabled"));
     }
 
     public static ServerConfig defaultsForPort(int port) {
         return new ServerConfig(
-                "127.0.0.1", port, 256, JsonLineCodec.DEFAULT_MAX_LINE_LENGTH, 64, 500);
+                "127.0.0.1",
+                port,
+                256,
+                JsonLineCodec.DEFAULT_MAX_LINE_LENGTH,
+                64,
+                500,
+                Path.of("test-results"),
+                4096,
+                5000,
+                false);
     }
 
     private static String setting(Properties properties, String key) {
@@ -83,5 +114,13 @@ public record ServerConfig(
         } catch (NumberFormatException exception) {
             throw new IllegalStateException(key + " must be a long", exception);
         }
+    }
+
+    private static boolean booleanSetting(Properties properties, String key) {
+        String value = setting(properties, key);
+        if (!"true".equalsIgnoreCase(value) && !"false".equalsIgnoreCase(value)) {
+            throw new IllegalStateException(key + " must be true or false");
+        }
+        return Boolean.parseBoolean(value);
     }
 }

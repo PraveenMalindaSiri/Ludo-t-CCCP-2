@@ -1,0 +1,34 @@
+LUDO-T Work 06 verification
+Date: 2026-09-19 UTC
+Runtime: Eclipse Temurin OpenJDK 26.0.2.1
+
+Production compilation:
+- game-core: passed
+- protocol: passed
+- server-app: passed
+- client-app: passed
+- test-client: passed
+
+Automated tests executed with JUnit Platform Console 1.8.1:
+- game-core: 81 passed, 0 failed
+- protocol/server/client/test-client: 64 passed, 0 failed
+- total: 145 passed, 0 failed
+
+Curated rapid-client evidence run:
+- two concurrent clients
+- 20 requests per client
+- total sent: 40
+- total responses: 40
+- total success: 40
+- total rejected: 0
+- total lost: 0
+- total duplicate: 0
+- maximum recorded queue depth: 28
+- maximum server queue wait: 16 ms
+- server evidence thread virtual status: true for all rows
+
+Environment limitation:
+- Maven could not resolve plugins from Maven Central because outbound DNS/network access was blocked.
+- The same Java 26 source tree was compiled directly with javac and all available tests were run.
+- The six opt-in JdbcGameRepositoryIT cases require the local ludot_test MySQL schema and must be
+  rerun on the Windows/MySQL development machine with .\mvnw.cmd -Pmysql-it clean test.

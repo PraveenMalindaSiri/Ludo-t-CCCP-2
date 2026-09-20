@@ -66,6 +66,21 @@ class RequestDispatcherTest {
         assertEquals(ErrorCode.INVALID_REQUEST, mismatch.response().errorCode());
     }
 
+    @Test
+    void gameWorkIsRejectedAfterShutdownBegins() {
+        RequestDispatcher.DispatchResult connected =
+                dispatcher.dispatch(request(RequestType.CONNECT), null);
+        dispatcher.beginShutdown();
+
+        RequestDispatcher.DispatchResult result =
+                dispatcher.dispatch(
+                        request(RequestType.LIST_SESSIONS),
+                        connected.registeredClientId(),
+                        subscriber);
+
+        assertEquals(ErrorCode.SERVER_ERROR, result.response().errorCode());
+    }
+
     private RequestMessage request(RequestType type) {
         return RequestMessage.create(
                 UUID.randomUUID(), clientId, type, null, Map.of(), Instant.now());
