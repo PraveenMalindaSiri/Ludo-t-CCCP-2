@@ -257,7 +257,7 @@ public class BlockHandler {
 
     public boolean canBlockCaptureBlock(Block attackingBlock, Block defendingBlock) {
         if (attackingBlock == null || defendingBlock == null) return false;
-        return attackingBlock.getSize() == defendingBlock.getSize();
+        return attackingBlock.getSize() >= defendingBlock.getSize();
     }
 
     // block capturing another block
