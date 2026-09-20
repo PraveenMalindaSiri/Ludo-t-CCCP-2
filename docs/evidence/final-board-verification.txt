@@ -1,0 +1,31 @@
+LUDO-T Assignment 1 board correction - final verification
+Date: 2026-09-20
+
+Compilation
+- game-core main: passed with JDK 26
+- protocol main: passed with JDK 26
+- server-app main: passed with JDK 26
+- client-app main: passed with JDK 26
+- test-client main: passed with JDK 26
+- all test sources: passed with JDK 26
+
+Automated tests
+- 154 tests found
+- 154 tests started
+- 154 tests successful
+- 0 tests failed
+
+Verified board mapping
+- X/start cells: Yellow 0, Blue 13, Red 26, Green 39
+- Approach circles: Yellow 50, Blue 11, Red 24, Green 37
+- T-11 destinations: Alpha 6, Beta 24, Gamma 43
+- Bases: Green top-left, Yellow top-right, Red bottom-left, Blue bottom-right
+- Home straights: Yellow top, Blue right, Red bottom, Green left
+
+Visual inspection
+- Swing dashboard rendered headlessly at 1280 x 800
+- Bases, X cells, approach circles, home straights, Alpha/Beta/Gamma symbols,
+  active mystery marker, pieces, and dashboard layout were checked in the rendered image
+- Copy ID control is visible beside the complete session UUID and has a focused clipboard test
+- Rapid-client launcher quotes output paths containing spaces and tolerates Windows PowerShell's
+  unavailable child-process exit-code value before reconciling both client summary files

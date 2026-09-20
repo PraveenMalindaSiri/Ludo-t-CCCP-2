@@ -9,10 +9,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import server.ServerConfig;
 import server.application.GameService;
 import server.application.port.GameRepository;
+import server.evidence.ServerCsvLogger;
 
 /** Accepts independent persistent client connections for the standalone server process. */
 public final class GameServer implements AutoCloseable {
@@ -21,16 +23,20 @@ public final class GameServer implements AutoCloseable {
     private final RequestDispatcher dispatcher;
     private final Map<UUID, ClientConnection> connections = new ConcurrentHashMap<>();
     private final AtomicBoolean running = new AtomicBoolean();
+    private final AtomicBoolean closed = new AtomicBoolean();
     private final CountDownLatch terminated = new CountDownLatch(1);
     private volatile ServerSocket serverSocket;
     private volatile Thread acceptThread;
 
     public GameServer(ServerConfig config) {
-        this(config, new RequestDispatcher(new GameService(config)));
+        this(config, GameRepository.disabled());
     }
 
     public GameServer(ServerConfig config, GameRepository repository) {
-        this(config, new RequestDispatcher(new GameService(config, repository)));
+        this(
+                config,
+                new RequestDispatcher(
+                        new GameService(config, repository, createEvidenceLogger(config))));
     }
 
     GameServer(ServerConfig config, RequestDispatcher dispatcher) {
@@ -39,14 +45,23 @@ public final class GameServer implements AutoCloseable {
     }
 
     public synchronized void start() throws IOException {
+        if (closed.get()) {
+            throw new IllegalStateException("Server is already closed");
+        }
         if (!running.compareAndSet(false, true)) {
             throw new IllegalStateException("Server already started");
         }
-        ServerSocket socket = new ServerSocket();
-        socket.setReuseAddress(true);
-        socket.bind(new InetSocketAddress(config.host(), config.port()));
-        serverSocket = socket;
-        acceptThread = Thread.ofVirtual().name("server-accept").start(this::acceptLoop);
+        try {
+            ServerSocket socket = new ServerSocket();
+            socket.setReuseAddress(true);
+            socket.bind(new InetSocketAddress(config.host(), config.port()));
+            serverSocket = socket;
+            acceptThread = Thread.ofVirtual().name("server-accept").start(this::acceptLoop);
+        } catch (IOException failure) {
+            running.set(false);
+            close();
+            throw failure;
+        }
     }
 
     public int port() {
@@ -107,22 +122,51 @@ public final class GameServer implements AutoCloseable {
         }
     }
 
-    @Override
-    public void close() {
-        if (!running.compareAndSet(true, false)) {
-            return;
+    private static ServerCsvLogger createEvidenceLogger(ServerConfig config) {
+        if (!config.evidenceEnabled()) {
+            return ServerCsvLogger.disabled();
         }
         try {
-            serverSocket.close();
+            return new ServerCsvLogger(
+                    config.evidenceDirectory().resolve("server.csv"),
+                    config.evidenceQueueCapacity());
+        } catch (IOException exception) {
+            throw new IllegalStateException("Unable to create server evidence CSV", exception);
+        }
+    }
+
+    @Override
+    public void close() {
+        if (!closed.compareAndSet(false, true)) {
+            return;
+        }
+        running.set(false);
+        dispatcher.beginShutdown();
+        try {
+            ServerSocket socket = serverSocket;
+            if (socket != null) {
+                socket.close();
+            }
         } catch (IOException ignored) {
             // The server socket is already closing.
         }
-        connections.values().forEach(ClientConnection::close);
+        connections.values().forEach(ClientConnection::initiateServerShutdown);
+        long closeDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
+        for (ClientConnection connection : connections.values()) {
+            long remaining = Math.max(0, closeDeadline - System.nanoTime());
+            connection.awaitClosed(remaining, TimeUnit.NANOSECONDS);
+            connection.close();
+        }
         connections.clear();
         dispatcher.close();
         Thread thread = acceptThread;
         if (thread != null && thread != Thread.currentThread()) {
             thread.interrupt();
+            try {
+                thread.join(TimeUnit.SECONDS.toMillis(1));
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+            }
         }
         terminated.countDown();
     }

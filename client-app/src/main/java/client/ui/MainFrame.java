@@ -23,7 +23,7 @@ public final class MainFrame extends JFrame implements ClientController.View {
     private final GamePanel gamePanel;
 
     public MainFrame(ClientController controller, String defaultHost, int defaultPort) {
-        super("LUDO-T Client");
+        super("LUDO-T | Concurrent Multiplayer Simulation");
         if (!SwingUtilities.isEventDispatchThread()) {
             throw new IllegalStateException("MainFrame must be created on the EDT");
         }
@@ -46,14 +46,15 @@ public final class MainFrame extends JFrame implements ClientController.View {
                         controller::stopGame,
                         controller::setSpeed,
                         controller::leaveSession);
+        content.setBackground(AppTheme.BACKGROUND);
         content.add(connectionPanel, CONNECTION);
         content.add(lobbyPanel, LOBBY);
         content.add(gamePanel, GAME);
         setContentPane(content);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setMinimumSize(new java.awt.Dimension(940, 700));
-        setSize(1120, 820);
-        setLocationByPlatform(true);
+        setMinimumSize(new java.awt.Dimension(1100, 760));
+        setSize(1320, 880);
+        setLocationRelativeTo(null);
         addWindowListener(
                 new WindowAdapter() {
                     @Override
@@ -69,7 +70,7 @@ public final class MainFrame extends JFrame implements ClientController.View {
             throw new IllegalStateException("MainFrame rendering must run on the EDT");
         }
         connectionPanel.render(state);
-        lobbyPanel.render(state.sessions(), state.lastAction());
+        lobbyPanel.render(state);
         gamePanel.render(state.snapshot(), state.events(), state.lastAction());
 
         if (state.connectionStatus() != ClientViewState.ConnectionStatus.CONNECTED) {

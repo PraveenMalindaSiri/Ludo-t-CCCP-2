@@ -9,9 +9,10 @@ public final class GameConfig {
     private final int diceSides = 6;
     private final int mysteryCellDuration = 4;
     private final int maxConsecutiveSixes = 3;
-    private final int alphaCell = 8;
-    private final int betaCell = 26;
-    private final int gammaCell = 45;
+
+    private final int alphaCell = 6;
+    private final int betaCell = 24;
+    private final int gammaCell = 43;
     private final int effectDuration = 4;
     private final int consecutiveThreesForTeleport = 3;
     private final int roundsBeforeMysterySpawn = 2;
@@ -24,10 +25,10 @@ public final class GameConfig {
     private final int greenStart = 39;
 
     // Approach positions on the standard path
-    private final int yellowApproach = 51;
-    private final int blueApproach = 12;
-    private final int redApproach = 25;
-    private final int greenApproach = 38;
+    private final int yellowApproach = 50;
+    private final int blueApproach = 11;
+    private final int redApproach = 24;
+    private final int greenApproach = 37;
 
     private GameConfig() {}
 

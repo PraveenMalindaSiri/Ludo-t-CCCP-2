@@ -36,6 +36,9 @@ build/
 .vscode/
 .env
 *.local.properties
+test-results/
+!docs/evidence/work06-sample/
+!docs/evidence/work06-sample/**
 
 ### Mac OS ###
 .DS_Store

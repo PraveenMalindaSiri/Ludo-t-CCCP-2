@@ -130,7 +130,7 @@ class CommandTest {
     }
 
     @Test
-    void differentlySizedBlockCannotCaptureDefendingBlock() {
+    void smallerBlockCannotCaptureLargerDefendingBlock() {
         Block attacker = createBlock("YELLOW", 0, 2);
         Block defender = createBlock("RED", 3, 3);
 
@@ -143,6 +143,23 @@ class CommandTest {
         assertEquals(3, result.getBlockedAt());
         assertEquals(0, attacker.getPosition());
         assertEquals(3, defender.getSize());
+    }
+
+    @Test
+    void largerBlockCapturesSmallerDefendingBlock() {
+        Block attacker = createBlock("YELLOW", 0, 3);
+        Block defender = createBlock("RED", 2, 2);
+
+        CommandResult result =
+                new BlockMoveCommand(attacker, 6, board, blockHandler, captureHandler, resolver)
+                        .execute();
+
+        assertTrue(result.wasExecuted());
+        assertFalse(result.wasBlocked());
+        assertEquals(2, attacker.getPosition());
+        assertEquals(2, result.getCapturedPieces().size());
+        assertTrue(defender.getPieces().isEmpty());
+        assertTrue(result.getCapturedPieces().stream().allMatch(Piece::isInBase));
     }
 
     @Test

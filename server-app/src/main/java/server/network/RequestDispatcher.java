@@ -82,6 +82,10 @@ public final class RequestDispatcher implements AutoCloseable {
         games.connectionClosed(subscriber);
     }
 
+    public void beginShutdown() {
+        games.beginShutdown();
+    }
+
     GameService games() {
         return games;
     }
@@ -96,7 +100,9 @@ public final class RequestDispatcher implements AutoCloseable {
                     false,
                     registeredClientId);
         }
-        ResponseMessage response = games.handleOrEnqueue(request, subscriber, System.nanoTime());
+        Instant receivedAt = Instant.now();
+        ResponseMessage response =
+                games.handleOrEnqueue(request, subscriber, receivedAt, System.nanoTime());
         return new DispatchResult(response, registeredClientId, false);
     }
 

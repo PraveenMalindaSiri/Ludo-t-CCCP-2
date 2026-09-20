@@ -4,6 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
+import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -19,9 +20,9 @@ import protocol.GameSnapshotDto;
 /** Paints a complete board from immutable protocol DTOs only. */
 public final class BoardPanel extends JPanel {
 
-    private static final Color BOARD_BACKGROUND = new Color(248, 249, 252);
-    private static final Color PATH_COLOR = Color.WHITE;
-    private static final Color GRID_COLOR = new Color(116, 124, 138);
+    private static final Color BOARD_BACKGROUND = AppTheme.BACKGROUND_SOFT;
+    private static final Color PATH_COLOR = new Color(232, 238, 248);
+    private static final Color GRID_COLOR = new Color(93, 108, 132);
 
     private GameSnapshotDto snapshot;
 
@@ -47,28 +48,40 @@ public final class BoardPanel extends JPanel {
             int originX = (getWidth() - paintedSize) / 2;
             int originY = (getHeight() - paintedSize) / 2;
 
+            g.setColor(new Color(0, 0, 0, 80));
+            g.fillRoundRect(originX - 8, originY - 4, paintedSize + 16, paintedSize + 18, 24, 24);
+            g.setColor(new Color(24, 35, 57));
+            g.fillRoundRect(originX - 8, originY - 8, paintedSize + 16, paintedSize + 16, 24, 24);
             paintBases(g, originX, originY, cellSize);
             paintPath(g, originX, originY, cellSize);
+            paintApproachCells(g, originX, originY, cellSize);
+            paintStartingCells(g, originX, originY, cellSize);
+            paintMysteryEffectCells(g, originX, originY, cellSize);
             paintHomeStraights(g, originX, originY, cellSize);
             paintCenter(g, originX, originY, cellSize);
             paintMystery(g, originX, originY, cellSize);
             paintPieces(g, originX, originY, cellSize);
+            paintBoardCaption(g, originX, originY, paintedSize);
         } finally {
             g.dispose();
         }
     }
 
     private void paintBases(Graphics2D g, int x, int y, int cell) {
-        fillArea(g, x, y, cell, 0, 0, colorFor("RED", 55));
-        fillArea(g, x, y, cell, 9, 0, colorFor("GREEN", 55));
-        fillArea(g, x, y, cell, 9, 9, colorFor("YELLOW", 65));
-        fillArea(g, x, y, cell, 0, 9, colorFor("BLUE", 55));
+        fillArea(g, x, y, cell, 0, 0, colorFor("GREEN", 55));
+        fillArea(g, x, y, cell, 9, 0, colorFor("YELLOW", 65));
+        fillArea(g, x, y, cell, 9, 9, colorFor("BLUE", 55));
+        fillArea(g, x, y, cell, 0, 9, colorFor("RED", 55));
         for (String color : List.of("RED", "GREEN", "YELLOW", "BLUE")) {
             for (int index = 0; index < 4; index++) {
                 Point point = BoardGeometry.base(color, index);
                 paintCell(g, x, y, cell, point, Color.WHITE);
             }
         }
+        paintBaseLabel(g, "GREEN", x + cell * 3, y + cell, colorFor("GREEN", 255));
+        paintBaseLabel(g, "YELLOW", x + cell * 12, y + cell, colorFor("YELLOW", 255));
+        paintBaseLabel(g, "RED", x + cell * 3, y + cell * 14, colorFor("RED", 255));
+        paintBaseLabel(g, "BLUE", x + cell * 12, y + cell * 14, colorFor("BLUE", 255));
     }
 
     private void fillArea(Graphics2D g, int x, int y, int cell, int gridX, int gridY, Color color) {
@@ -106,9 +119,9 @@ public final class BoardPanel extends JPanel {
         int x = originX + point.x * cell;
         int y = originY + point.y * cell;
         g.setColor(fill);
-        g.fillRect(x, y, cell, cell);
+        g.fillRoundRect(x + 1, y + 1, Math.max(1, cell - 2), Math.max(1, cell - 2), 6, 6);
         g.setColor(GRID_COLOR);
-        g.drawRect(x, y, cell, cell);
+        g.drawRoundRect(x + 1, y + 1, Math.max(1, cell - 2), Math.max(1, cell - 2), 6, 6);
     }
 
     private void paintMystery(Graphics2D g, int x, int y, int cell) {
@@ -122,10 +135,10 @@ public final class BoardPanel extends JPanel {
         Point point = BoardGeometry.standardCell(position);
         int left = x + point.x * cell;
         int top = y + point.y * cell;
-        g.setColor(new Color(111, 45, 189));
+        g.setColor(AppTheme.PURPLE);
         g.setStroke(new BasicStroke(Math.max(2f, cell / 10f)));
         g.drawOval(left + 4, top + 4, Math.max(1, cell - 8), Math.max(1, cell - 8));
-        drawCentered(g, "?", left, top, cell, Color.BLACK);
+        drawCentered(g, "?", left, top, cell, AppTheme.PURPLE);
     }
 
     private void paintPieces(Graphics2D g, int x, int y, int cell) {
@@ -145,7 +158,8 @@ public final class BoardPanel extends JPanel {
                                                         player.color(),
                                                         piece.name(),
                                                         piece.inBlock(),
-                                                        piece.stateLabel()));
+                                                        piece.stateLabel(),
+                                                        piece.blockId()));
                             }
                         });
 
@@ -158,13 +172,28 @@ public final class BoardPanel extends JPanel {
                         int offsetY = index / 2 % 2 * (cell / 2);
                         int left = x + point.x * cell + offsetX + 1;
                         int top = y + point.y * cell + offsetY + 1;
-                        g.setColor(colorFor(piece.color(), 150));
+                        Color pieceColor = colorFor(piece.color(), 255);
+                        g.setPaint(
+                                new GradientPaint(
+                                        left,
+                                        top,
+                                        AppTheme.blend(pieceColor, Color.WHITE, 0.2f),
+                                        left + diameter,
+                                        top + diameter,
+                                        AppTheme.blend(pieceColor, Color.BLACK, 0.22f)));
                         g.fillOval(left, top, diameter, diameter);
-                        g.setColor(Color.DARK_GRAY);
+                        boolean active = snapshot.currentPlayer().equalsIgnoreCase(piece.color());
+                        g.setStroke(new BasicStroke(active ? 2.6f : 1.3f));
+                        g.setColor(active ? Color.WHITE : new Color(25, 32, 43));
                         g.drawOval(left, top, diameter, diameter);
-                        drawCentered(g, piece.name(), left, top, diameter, Color.BLACK);
+                        Color text =
+                                piece.color().equalsIgnoreCase("YELLOW")
+                                        ? new Color(35, 29, 5)
+                                        : Color.WHITE;
+                        drawCentered(g, piece.name(), left, top, diameter, text);
                         if (piece.inBlock()) {
                             g.setStroke(new BasicStroke(2f));
+                            g.setColor(AppTheme.PURPLE);
                             g.drawRect(left - 1, top - 1, diameter + 2, diameter + 2);
                         }
                     }
@@ -191,5 +220,96 @@ public final class BoardPanel extends JPanel {
         return new Color(base.getRed(), base.getGreen(), base.getBlue(), alpha);
     }
 
-    private record PieceView(String color, String name, boolean inBlock, String state) {}
+    private void paintStartingCells(Graphics2D g, int x, int y, int cell) {
+        for (String color : List.of("YELLOW", "BLUE", "RED", "GREEN")) {
+            Point point = BoardGeometry.startingCell(color);
+            int left = x + point.x * cell;
+            int top = y + point.y * cell;
+            Color playerColor = colorFor(color, 255);
+            g.setColor(AppTheme.blend(PATH_COLOR, playerColor, 0.23f));
+            g.fillRoundRect(left + 2, top + 2, Math.max(1, cell - 4), Math.max(1, cell - 4), 6, 6);
+            g.setFont(AppTheme.HEADING.deriveFont(java.awt.Font.BOLD, Math.max(12f, cell * 0.52f)));
+            drawCentered(g, "X", left, top, cell, playerColor);
+        }
+    }
+
+    private void paintApproachCells(Graphics2D g, int x, int y, int cell) {
+        for (String color : List.of("YELLOW", "BLUE", "RED", "GREEN")) {
+            Point point = BoardGeometry.approachCell(color);
+            int left = x + point.x * cell;
+            int top = y + point.y * cell;
+            int diameter = Math.max(12, cell / 2);
+            int circleLeft = left + (cell - diameter) / 2;
+            int circleTop = top + (cell - diameter) / 2;
+            Color playerColor = colorFor(color, 255);
+
+            g.setColor(AppTheme.blend(PATH_COLOR, playerColor, 0.16f));
+            g.fillRoundRect(left + 2, top + 2, Math.max(1, cell - 4), Math.max(1, cell - 4), 6, 6);
+            g.setColor(playerColor);
+            g.fillOval(circleLeft, circleTop, diameter, diameter);
+            g.setColor(AppTheme.blend(playerColor, Color.BLACK, 0.28f));
+            g.setStroke(new BasicStroke(Math.max(1.4f, cell / 20f)));
+            g.drawOval(circleLeft, circleTop, diameter, diameter);
+        }
+    }
+
+    private void paintMysteryEffectCells(Graphics2D g, int x, int y, int cell) {
+        paintMysteryEffectCell(g, x, y, cell, "ALPHA", "\u03b1");
+        paintMysteryEffectCell(g, x, y, cell, "BETA", "\u03b2");
+        paintMysteryEffectCell(g, x, y, cell, "GAMMA", "\u03b3");
+    }
+
+    private void paintMysteryEffectCell(
+            Graphics2D g, int x, int y, int cell, String effect, String symbol) {
+        Point point = BoardGeometry.mysteryEffectCell(effect);
+        int left = x + point.x * cell;
+        int top = y + point.y * cell;
+        boolean sharesApproachCell = point.equals(BoardGeometry.approachCell("RED"));
+
+        g.setColor(new Color(91, 66, 146, 68));
+        g.fillRoundRect(left + 3, top + 3, Math.max(1, cell - 6), Math.max(1, cell - 6), 7, 7);
+        g.setColor(AppTheme.PURPLE);
+        g.setStroke(new BasicStroke(Math.max(1.5f, cell / 18f)));
+        g.drawRoundRect(left + 4, top + 4, Math.max(1, cell - 8), Math.max(1, cell - 8), 7, 7);
+
+        if (sharesApproachCell) {
+            int badge = Math.max(13, cell / 2);
+            g.setColor(new Color(246, 242, 255));
+            g.fillOval(left + cell - badge - 2, top + 2, badge, badge);
+            g.setFont(AppTheme.SMALL.deriveFont(java.awt.Font.BOLD, Math.max(10f, cell * 0.28f)));
+            drawCentered(g, symbol, left + cell - badge - 2, top + 2, badge, AppTheme.PURPLE);
+        } else {
+            g.setFont(AppTheme.HEADING.deriveFont(java.awt.Font.BOLD, Math.max(12f, cell * 0.48f)));
+            drawCentered(g, symbol, left, top, cell, AppTheme.PURPLE);
+        }
+    }
+
+    private void paintBaseLabel(Graphics2D g, String text, int centerX, int baseline, Color color) {
+        g.setFont(AppTheme.SMALL.deriveFont(java.awt.Font.BOLD));
+        FontMetrics metrics = g.getFontMetrics();
+        g.setColor(color);
+        g.drawString(text, centerX - metrics.stringWidth(text) / 2, baseline);
+    }
+
+    private void paintBoardCaption(Graphics2D g, int x, int y, int size) {
+        if (snapshot == null) return;
+        String text =
+                snapshot.status().name()
+                        + "  •  turn "
+                        + snapshot.turn()
+                        + "  •  v"
+                        + snapshot.version();
+        g.setFont(AppTheme.SMALL);
+        FontMetrics metrics = g.getFontMetrics();
+        int width = metrics.stringWidth(text) + 18;
+        int left = x + size - width - 8;
+        int top = y + 8;
+        g.setColor(new Color(9, 14, 27, 210));
+        g.fillRoundRect(left, top, width, 24, 12, 12);
+        g.setColor(AppTheme.TEXT);
+        g.drawString(text, left + 9, top + 16);
+    }
+
+    private record PieceView(
+            String color, String name, boolean inBlock, String state, String blockId) {}
 }

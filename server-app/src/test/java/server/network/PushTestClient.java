@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import protocol.BoundedLineReader;
 import protocol.EventMessage;
+import protocol.EventType;
 import protocol.JsonLineCodec;
 import protocol.MessageKind;
 import protocol.RequestMessage;
@@ -63,6 +64,17 @@ final class PushTestClient implements AutoCloseable {
             if (codec.decodeKind(line) == MessageKind.EVENT) {
                 EventMessage event = codec.decode(line, EventMessage.class);
                 if (event.snapshot() != null && event.version() >= minimumVersion) return event;
+            }
+        }
+    }
+
+    EventMessage readEvent(EventType expectedType) throws Exception {
+        while (true) {
+            String line = reader.readLine();
+            if (line == null) throw new AssertionError("Connection closed before event");
+            if (codec.decodeKind(line) == MessageKind.EVENT) {
+                EventMessage event = codec.decode(line, EventMessage.class);
+                if (event.eventType() == expectedType) return event;
             }
         }
     }

@@ -6,12 +6,18 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import protocol.BoundedLineReader;
+import protocol.EventMessage;
+import protocol.EventType;
 import protocol.JsonLineCodec;
 import protocol.MessageKind;
 import protocol.ProtocolException;
@@ -32,6 +38,7 @@ public final class ClientConnection implements AutoCloseable, SessionSubscriber 
     private final BlockingQueue<OutboundMessage> outbound;
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
+    private final CountDownLatch closedLatch = new CountDownLatch(1);
     private volatile UUID registeredClientId;
     private volatile Thread readerThread;
     private volatile Thread writerThread;
@@ -93,6 +100,32 @@ public final class ClientConnection implements AutoCloseable, SessionSubscriber 
     /** Compatibility alias retained for the Work 02 writer-queue test. */
     public boolean send(Object message) {
         return offer(message);
+    }
+
+    void initiateServerShutdown() {
+        enqueue(
+                new OutboundMessage(
+                        new EventMessage(
+                                RequestMessage.CURRENT_PROTOCOL_VERSION,
+                                MessageKind.EVENT,
+                                UUID.randomUUID(),
+                                null,
+                                EventType.SERVER_SHUTTING_DOWN,
+                                0,
+                                "Server is shutting down",
+                                List.of(),
+                                null,
+                                Instant.now()),
+                        true));
+    }
+
+    boolean awaitClosed(long timeout, TimeUnit unit) {
+        try {
+            return closedLatch.await(timeout, unit);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
     }
 
     private void readLoop() {
@@ -180,6 +213,7 @@ public final class ClientConnection implements AutoCloseable, SessionSubscriber 
         interruptOther(writerThread);
         dispatcher.connectionClosed(this);
         onClosed.run();
+        closedLatch.countDown();
     }
 
     private void interruptOther(Thread thread) {

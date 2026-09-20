@@ -3,7 +3,6 @@ package mystery;
 import static org.junit.jupiter.api.Assertions.*;
 
 import board.Board;
-import config.GameConfig;
 import mystery.effect.AlphaEffect;
 import mystery.effect.ApproachEffect;
 import mystery.effect.BaseEffect;
@@ -35,7 +34,7 @@ class MysteryEffectTest {
         MysteryOutcome outcome = effect.apply(piece, board);
 
         assertEquals(MysteryOutcome.Type.ALPHA_ENERGIZED, outcome.getType());
-        assertEquals(GameConfig.getInstance().getAlphaCell(), piece.getPosition());
+        assertEquals(6, piece.getPosition());
         assertTrue(piece.getState() instanceof EnergizedState);
     }
 
@@ -58,7 +57,7 @@ class MysteryEffectTest {
         MysteryOutcome outcome = new BetaEffect().apply(piece, board);
 
         assertEquals(MysteryOutcome.Type.BETA, outcome.getType());
-        assertEquals(GameConfig.getInstance().getBetaCell(), piece.getPosition());
+        assertEquals(24, piece.getPosition());
         assertTrue(piece.getState() instanceof FrozenState);
     }
 
@@ -69,7 +68,7 @@ class MysteryEffectTest {
         MysteryOutcome outcome = new GammaEffect(new BetaEffect()).apply(piece, board);
 
         assertEquals(MysteryOutcome.Type.GAMMA_DIRECTION_CHANGED, outcome.getType());
-        assertEquals(GameConfig.getInstance().getGammaCell(), piece.getPosition());
+        assertEquals(43, piece.getPosition());
         assertEquals("CLOCKWISE", outcome.getOldDirection());
         assertEquals("COUNTERCLOCKWISE", outcome.getNewDirection());
         assertEquals("COUNTERCLOCKWISE", piece.getDirection());
@@ -82,7 +81,7 @@ class MysteryEffectTest {
         MysteryOutcome outcome = new GammaEffect(new BetaEffect()).apply(piece, board);
 
         assertEquals(MysteryOutcome.Type.GAMMA_TO_BETA, outcome.getType());
-        assertEquals(GameConfig.getInstance().getBetaCell(), piece.getPosition());
+        assertEquals(24, piece.getPosition());
         assertTrue(piece.getState() instanceof FrozenState);
     }
 
