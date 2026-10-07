@@ -54,6 +54,11 @@ class GamePanelTest {
                 new GameSnapshotDto.MysteryDto(false, -1, 0),
                 "",
                 0,
-                "Created");
+                "Created",
+                500,
+                null,
+                "",
+                List.of(),
+                0);
     }
 }

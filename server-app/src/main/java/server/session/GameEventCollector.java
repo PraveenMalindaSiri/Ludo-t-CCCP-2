@@ -13,13 +13,13 @@ public final class GameEventCollector implements IGameEventListener {
     private Integer latestDice;
     private String latestResult = "";
 
-    public synchronized void beginOperation() {
+    public void beginOperation() {
         events.clear();
         latestDice = null;
         latestResult = "";
     }
 
-    public synchronized EventBatch drain() {
+    public EventBatch drain() {
         EventBatch result = new EventBatch(events, latestDice, latestResult);
         events.clear();
         latestDice = null;
@@ -28,45 +28,44 @@ public final class GameEventCollector implements IGameEventListener {
     }
 
     @Override
-    public synchronized void onPlayerInfo(String color, List<String> pieceNames) {
+    public void onPlayerInfo(String color, List<String> pieceNames) {
         record(color + " pieces: " + String.join(", ", pieceNames));
     }
 
     @Override
-    public synchronized void onInitialRoll(String color, int value) {
+    public void onInitialRoll(String color, int value) {
         record(color + " initial roll: " + value);
     }
 
     @Override
-    public synchronized void onDiceRolled(String color, int value) {
+    public void onDiceRolled(String color, int value) {
         latestDice = value;
         record(color + " rolled " + value);
     }
 
     @Override
-    public synchronized void onFirstPlayer(String color) {
+    public void onFirstPlayer(String color) {
         record(color + " plays first");
     }
 
     @Override
-    public synchronized void onTurnOrder(List<String> colors) {
+    public void onTurnOrder(List<String> colors) {
         record("Turn order: " + String.join(" -> ", colors));
     }
 
     @Override
-    public synchronized void onPieceEnteredBoard(
-            String color, String pieceName, int boardCount, int baseCount) {
+    public void onPieceEnteredBoard(String color, String pieceName, int boardCount, int baseCount) {
         record(pieceName + " entered the board");
     }
 
     @Override
-    public synchronized void onPieceMoved(
+    public void onPieceMoved(
             String color, String pieceName, int from, int to, int value, String direction) {
         record(pieceName + " moved " + from + " -> " + to + " (" + direction + ")");
     }
 
     @Override
-    public synchronized void onPieceBlocked(
+    public void onPieceBlocked(
             String color,
             String pieceName,
             int from,
@@ -77,17 +76,17 @@ public final class GameEventCollector implements IGameEventListener {
     }
 
     @Override
-    public synchronized void onNoOtherPieces(String color) {
+    public void onNoOtherPieces(String color) {
         record(color + " had no other valid piece");
     }
 
     @Override
-    public synchronized void onMovedBeforeBlock(String color, String pieceName, int stoppedAt) {
+    public void onMovedBeforeBlock(String color, String pieceName, int stoppedAt) {
         record(pieceName + " stopped before a block at " + stoppedAt);
     }
 
     @Override
-    public synchronized void onPieceCaptured(
+    public void onPieceCaptured(
             String capturerColor,
             String capturerName,
             int cell,
@@ -99,33 +98,32 @@ public final class GameEventCollector implements IGameEventListener {
     }
 
     @Override
-    public synchronized void onMysteryResolved(
-            String color, String pieceName, MysteryOutcome outcome) {
+    public void onMysteryResolved(String color, String pieceName, MysteryOutcome outcome) {
         record(pieceName + " mystery result: " + outcome.getType());
     }
 
     @Override
-    public synchronized void onMysteryCellSpawned(int position, int duration) {
+    public void onMysteryCellSpawned(int position, int duration) {
         record("Mystery cell appeared at " + position + " for " + duration + " rounds");
     }
 
     @Override
-    public synchronized void onStateTeleportToBase(String color, String pieceName) {
+    public void onStateTeleportToBase(String color, String pieceName) {
         record(pieceName + " returned to base because of its state");
     }
 
     @Override
-    public synchronized void onRoundEnd(GameSnapshot snapshot) {
+    public void onRoundEnd(GameSnapshot snapshot) {
         record("Round " + snapshot.getRound() + " completed");
     }
 
     @Override
-    public synchronized void onGameWon(String color) {
+    public void onGameWon(String color) {
         record(color + " finished all pieces");
     }
 
     @Override
-    public synchronized void onFinalPlacements(List<String> finishOrder) {
+    public void onFinalPlacements(List<String> finishOrder) {
         record("Final placements: " + String.join(", ", finishOrder));
     }
 

@@ -1,5 +1,5 @@
 LUDO-T Assignment 1 board correction - final verification
-Date: 2026-09-20
+Updated: 2026-10-07
 
 Compilation
 - game-core main: passed with JDK 26
@@ -10,9 +10,9 @@ Compilation
 - all test sources: passed with JDK 26
 
 Automated tests
-- 154 tests found
-- 154 tests started
-- 154 tests successful
+- 164 tests found
+- 158 tests successful
+- 6 MySQL integration tests skipped by the default profile
 - 0 tests failed
 
 Verified board mapping

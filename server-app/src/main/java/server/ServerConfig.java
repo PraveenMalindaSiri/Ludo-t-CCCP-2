@@ -40,21 +40,6 @@ public record ServerConfig(
         Objects.requireNonNull(evidenceDirectory, "evidenceDirectory");
     }
 
-    /** Compatibility constructor retained for connection-focused tests and callers. */
-    public ServerConfig(String host, int port, int outboundQueueCapacity, int maxLineLength) {
-        this(
-                host,
-                port,
-                outboundQueueCapacity,
-                maxLineLength,
-                64,
-                500,
-                Path.of("test-results"),
-                4096,
-                5000,
-                false);
-    }
-
     public static ServerConfig load() {
         Properties properties = new Properties();
         try (InputStream input = ServerConfig.class.getResourceAsStream(RESOURCE)) {

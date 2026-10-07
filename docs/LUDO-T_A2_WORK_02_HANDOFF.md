@@ -118,7 +118,8 @@ reader directly on their socket input.
 - `protocol/src/main/java/protocol/JsonLineCodec.java` - safe top-level message
   kind inspection before typed decoding.
 - `protocol/src/main/java/protocol/GameSnapshotDto.java` - current-player,
-  turn and last-action presentation metadata, with a compatibility constructor.
+  turn and last-action presentation metadata. The final package uses the complete structured
+  constructor only.
 - `protocol/src/test/java/protocol/JsonLineCodecTest.java` - message-kind tests.
 
 No files were moved or deleted. The `game-core` source and its 79 tests were

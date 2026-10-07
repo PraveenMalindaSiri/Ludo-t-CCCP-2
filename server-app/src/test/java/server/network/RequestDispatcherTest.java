@@ -14,11 +14,15 @@ import protocol.ErrorCode;
 import protocol.RequestMessage;
 import protocol.RequestType;
 import protocol.ResponseMessage;
+import server.ServerConfig;
+import server.application.GameService;
+import server.application.port.GameRepository;
 import server.application.port.SessionSubscriber;
+import server.evidence.ServerCsvLogger;
 
 class RequestDispatcherTest {
 
-    private final RequestDispatcher dispatcher = new RequestDispatcher();
+    private final RequestDispatcher dispatcher = dispatcher();
     private final UUID clientId = UUID.randomUUID();
     private final RecordingSubscriber subscriber = new RecordingSubscriber();
 
@@ -84,6 +88,12 @@ class RequestDispatcherTest {
     private RequestMessage request(RequestType type) {
         return RequestMessage.create(
                 UUID.randomUUID(), clientId, type, null, Map.of(), Instant.now());
+    }
+
+    private static RequestDispatcher dispatcher() {
+        ServerConfig config = ServerConfig.defaultsForPort(0);
+        return new RequestDispatcher(
+                new GameService(config, GameRepository.disabled(), ServerCsvLogger.disabled()));
     }
 
     private static final class RecordingSubscriber implements SessionSubscriber {

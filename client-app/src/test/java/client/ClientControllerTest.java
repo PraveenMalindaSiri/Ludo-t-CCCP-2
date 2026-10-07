@@ -197,7 +197,12 @@ class ClientControllerTest {
                     new GameSnapshotDto.MysteryDto(false, -1, 0),
                     "",
                     0,
-                    "Ready");
+                    "Ready",
+                    500,
+                    null,
+                    "",
+                    List.of(),
+                    0);
         }
     }
 }

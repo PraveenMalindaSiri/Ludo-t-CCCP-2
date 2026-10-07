@@ -24,9 +24,7 @@ public interface GameRepository extends AutoCloseable {
     @Override
     void close();
 
-    /**
-     * Explicitly disabled adapter retained for isolated existing tests and compatibility callers.
-     */
+    /** No-op repository for executions that intentionally run without persistence. */
     static GameRepository disabled() {
         return DisabledRepository.INSTANCE;
     }

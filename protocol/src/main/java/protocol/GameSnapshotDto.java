@@ -1,7 +1,6 @@
 package protocol;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -36,45 +35,6 @@ public record GameSnapshotDto(
         finalPlacements = finalPlacements == null ? List.of() : List.copyOf(finalPlacements);
     }
 
-    /** Compatibility constructor retained for Work 02/03 callers. */
-    public GameSnapshotDto(
-            UUID sessionId,
-            long version,
-            int round,
-            SessionStatus status,
-            List<PlayerDto> players,
-            MysteryDto mystery,
-            String currentPlayer,
-            long turn,
-            String lastAction) {
-        this(
-                sessionId,
-                version,
-                round,
-                status,
-                players,
-                mystery,
-                currentPlayer,
-                turn,
-                lastAction,
-                0,
-                null,
-                "",
-                List.of(),
-                0);
-    }
-
-    /** Compatibility constructor for snapshots created before turn metadata was available. */
-    public GameSnapshotDto(
-            UUID sessionId,
-            long version,
-            int round,
-            SessionStatus status,
-            List<PlayerDto> players,
-            MysteryDto mystery) {
-        this(sessionId, version, round, status, players, mystery, "", 0, "");
-    }
-
     /** Immutable player view with complete piece counts. */
     public record PlayerDto(
             String color, int boardCount, int baseCount, int homeCount, List<PieceDto> pieces) {
@@ -85,11 +45,6 @@ public record GameSnapshotDto(
                 throw new IllegalArgumentException("Piece counts must not be negative");
             }
             pieces = pieces == null ? List.of() : List.copyOf(pieces);
-        }
-
-        /** Compatibility constructor retained for Work 02/03 callers. */
-        public PlayerDto(String color, int boardCount, int baseCount, List<PieceDto> pieces) {
-            this(color, boardCount, baseCount, 0, pieces);
         }
     }
 
@@ -130,76 +85,6 @@ public record GameSnapshotDto(
             stateLabel = stateLabel == null || stateLabel.isBlank() ? "NORMAL" : stateLabel;
             blockId = blockId == null ? "" : blockId;
             requireText(position, "position");
-        }
-
-        /** Compatibility constructor retained for the earlier string-position DTO. */
-        public PieceDto(String name, String fullName, String position) {
-            this(
-                    name,
-                    name,
-                    fullName,
-                    colorFrom(name, fullName),
-                    areaFrom(position),
-                    standardPositionFrom(position),
-                    homeStraightIndexFrom(position),
-                    "",
-                    "NORMAL",
-                    0,
-                    false,
-                    "",
-                    position);
-        }
-
-        private static String colorFrom(String name, String fullName) {
-            String candidate =
-                    name != null && !name.isBlank() ? name : fullName == null ? "" : fullName;
-            if (candidate.isBlank()) return "UNKNOWN";
-            return switch (Character.toUpperCase(candidate.charAt(0))) {
-                case 'R' -> "RED";
-                case 'G' -> "GREEN";
-                case 'Y' -> "YELLOW";
-                case 'B' -> "BLUE";
-                default -> "UNKNOWN";
-            };
-        }
-
-        private static PieceArea areaFrom(String position) {
-            String value = normalize(position);
-            if (value.equals("HOME")) return PieceArea.HOME;
-            if (value.contains("HOMEPATH") || value.startsWith("HOME_STRAIGHT_")) {
-                return PieceArea.HOME_STRAIGHT;
-            }
-            if (value.matches("\\d+") || value.startsWith("CELL_")) {
-                return PieceArea.STANDARD_PATH;
-            }
-            return PieceArea.BASE;
-        }
-
-        private static int standardPositionFrom(String position) {
-            String value = normalize(position);
-            try {
-                if (value.startsWith("CELL_")) return Integer.parseInt(value.substring(5));
-                if (value.matches("\\d+")) return Integer.parseInt(value);
-            } catch (NumberFormatException ignored) {
-                // Compatibility data remains renderable as a base position.
-            }
-            return -1;
-        }
-
-        private static int homeStraightIndexFrom(String position) {
-            String value = normalize(position);
-            int marker = value.lastIndexOf("HOMEPATH");
-            String suffix = marker >= 0 ? value.substring(marker + 8) : "";
-            if (value.startsWith("HOME_STRAIGHT_")) suffix = value.substring(14);
-            try {
-                return suffix.isEmpty() ? -1 : Integer.parseInt(suffix);
-            } catch (NumberFormatException ignored) {
-                return -1;
-            }
-        }
-
-        private static String normalize(String value) {
-            return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
         }
     }
 

@@ -28,10 +28,6 @@ class BoardGeometryTest {
         assertNotEquals(
                 BoardGeometry.homeStraight("BLUE", 0), BoardGeometry.homeStraight("BLUE", 5));
         assertNotEquals(BoardGeometry.home("RED"), BoardGeometry.home("GREEN"));
-        assertEquals(BoardGeometry.standardCell(8), BoardGeometry.pointFor("Yellow", "8", 0));
-        assertEquals(
-                BoardGeometry.homeStraight("Yellow", 2),
-                BoardGeometry.pointFor("Yellow", "yellowhomepath2", 0));
     }
 
     @Test
@@ -92,14 +88,36 @@ class BoardGeometryTest {
                 GameSnapshotDto.PieceDto piece =
                         new GameSnapshotDto.PieceDto(
                                 color.substring(0, 1) + (index + 1),
+                                color.substring(0, 1) + (index + 1),
                                 color + " piece " + (index + 1),
-                                index == 0 ? "CELL_" + positions.size() : "BASE");
-                Point mapped = BoardGeometry.pointFor(color, piece.position(), index);
+                                color,
+                                index == 0
+                                        ? GameSnapshotDto.PieceArea.STANDARD_PATH
+                                        : GameSnapshotDto.PieceArea.BASE,
+                                index == 0 ? startingPosition(color) : -1,
+                                -1,
+                                "CLOCKWISE",
+                                "NORMAL",
+                                0,
+                                false,
+                                "",
+                                index == 0 ? "CELL_" + startingPosition(color) : "BASE");
+                Point mapped = BoardGeometry.pointFor(piece, index);
                 assertTrue(mapped.x >= 0 && mapped.x < BoardGeometry.GRID_SIZE);
                 assertTrue(mapped.y >= 0 && mapped.y < BoardGeometry.GRID_SIZE);
                 positions.add(mapped);
             }
         }
         assertEquals(16, positions.size());
+    }
+
+    private static int startingPosition(String color) {
+        return switch (color.toUpperCase()) {
+            case "YELLOW" -> 0;
+            case "BLUE" -> 13;
+            case "RED" -> 26;
+            case "GREEN" -> 39;
+            default -> throw new IllegalArgumentException("Unknown player color " + color);
+        };
     }
 }

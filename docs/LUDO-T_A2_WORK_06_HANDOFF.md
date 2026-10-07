@@ -158,7 +158,7 @@ thread interruption status before returning.
 
 - `protocol/src/main/java/protocol/CsvEncoder.java`
 - `server-app/src/main/java/server/evidence/ServerCsvLogger.java`
-- `server-app/src/main/java/server/lifecycle/ShutdownCoordinator.java`
+- `server-app/src/main/java/server/ServerMain.java` - installs the direct server shutdown hook.
 - `test-client/src/main/java/testclient/RapidTestClientMain.java`
 - `test-client/src/main/java/testclient/RapidClientConnection.java`
 - `test-client/src/main/java/testclient/RequestBurstRunner.java`
@@ -169,27 +169,28 @@ thread interruption status before returning.
 - Work 06 automated tests and curated evidence files
 
 Existing server/session/configuration files were changed only where required to inject evidence,
-expose queue timings and coordinate shutdown. No database table, SQL script or database contract was
-changed.
+expose queue timings and coordinate shutdown. The final package performs shutdown directly through
+`GameServer.close()` instead of retaining a one-method coordinator wrapper. No database table, SQL
+script or database contract was changed.
 
 ## 9. Verification results
 
-Java 26 direct compilation succeeded for all five production modules.
+Java 26 Maven compilation succeeded for all five production modules.
 
-| Suite | Passed | Failed |
-| --- | ---: | ---: |
-| Existing game-core tests | 81 | 0 |
-| Protocol, server, Swing client and rapid-client tests | 64 | 0 |
-| Total | 145 | 0 |
+| Result | Count |
+| --- | ---: |
+| Tests found | 164 |
+| Tests passed | 158 |
+| MySQL integration tests skipped by the default profile | 6 |
+| Failures and errors | 0 |
 
 Covered behaviours include CSV escaping/header/drain, concurrent producers, many outstanding
 futures, correlation, duplicate detection, server-disconnect completion, queue bounds, malformed
 JSON isolation, slow subscribers, creator disconnect, EDT callbacks, session isolation, MySQL
 repository unit behaviour and graceful server shutdown.
 
-Maven Central was unreachable in the review container, so the source was compiled directly with
-Temurin Java 26 and the cached project dependency versions. Run the authoritative Maven commands on
-the normal Windows development machine:
+The complete default Maven suite was rerun with Java 26. The MySQL profile can be rerun on the
+Windows development machine with:
 
 ```powershell
 .\mvnw.cmd spotless:apply
@@ -198,8 +199,7 @@ the normal Windows development machine:
 ```
 
 The last command requires the existing `ludot_test` MySQL schema and the same environment variables
-documented in the Work 05 handoff. It still runs the six opt-in `JdbcGameRepositoryIT` cases. No
-MySQL integration result is claimed from the review container.
+documented in the Work 05 handoff. The recorded MySQL 8.0.46 result is 6 passed, 0 failed.
 
 ## 10. Manual verification checklist
 

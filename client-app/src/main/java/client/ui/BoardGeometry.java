@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import protocol.GameSnapshotDto;
 
-/** Deterministic mapping from protocol position strings to a 15-by-15 board grid. */
+/** Deterministic mapping from structured protocol positions to a 15-by-15 board grid. */
 public final class BoardGeometry {
 
     public static final int GRID_SIZE = 15;
@@ -69,30 +69,6 @@ public final class BoardGeometry {
 
     public static List<Point> standardPath() {
         return STANDARD_PATH.stream().map(Point::new).toList();
-    }
-
-    public static Point pointFor(String color, String position, int pieceIndex) {
-        String normalizedColor = normalize(color);
-        String normalizedPosition = normalize(position);
-        if (normalizedPosition.chars().allMatch(Character::isDigit)
-                && !normalizedPosition.isEmpty()) {
-            return standardCell(Integer.parseInt(normalizedPosition));
-        }
-        if (normalizedPosition.startsWith("CELL_")) {
-            return standardCell(parseIndex(normalizedPosition, "CELL_"));
-        }
-        if (normalizedPosition.startsWith("HOME_STRAIGHT_")) {
-            return homeStraight(normalizedColor, parseIndex(normalizedPosition, "HOME_STRAIGHT_"));
-        }
-        String coreHomePathPrefix = normalizedColor + "HOMEPATH";
-        if (normalizedPosition.startsWith(coreHomePathPrefix)) {
-            return homeStraight(
-                    normalizedColor, parseIndex(normalizedPosition, coreHomePathPrefix));
-        }
-        if (normalizedPosition.equals("HOME")) {
-            return home(normalizedColor);
-        }
-        return base(normalizedColor, pieceIndex);
     }
 
     public static Point pointFor(GameSnapshotDto.PieceDto piece, int pieceIndex) {
@@ -175,14 +151,6 @@ public final class BoardGeometry {
             case "GAMMA" -> standardCell(43);
             default -> throw new IllegalArgumentException("Unknown mystery effect " + effect);
         };
-    }
-
-    private static int parseIndex(String value, String prefix) {
-        try {
-            return Integer.parseInt(value.substring(prefix.length()));
-        } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException("Invalid board position " + value, exception);
-        }
     }
 
     private static String normalize(String value) {

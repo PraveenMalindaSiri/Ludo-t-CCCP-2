@@ -8,7 +8,6 @@ import protocol.MessageKind;
 import protocol.RequestMessage;
 import protocol.RequestType;
 import protocol.ResponseMessage;
-import server.ServerConfig;
 import server.application.GameService;
 import server.application.port.SessionSubscriber;
 
@@ -16,10 +15,6 @@ import server.application.port.SessionSubscriber;
 public final class RequestDispatcher implements AutoCloseable {
 
     private final GameService games;
-
-    public RequestDispatcher() {
-        this(new GameService(ServerConfig.defaultsForPort(0)));
-    }
 
     public RequestDispatcher(GameService games) {
         this.games = games;

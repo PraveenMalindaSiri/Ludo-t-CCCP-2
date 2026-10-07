@@ -191,11 +191,11 @@ class JsonLineCodecTest {
                         REQUEST_ID, CLIENT_ID, RequestType.CREATE_SESSION, null, parameters, TIME);
 
         List<GameSnapshotDto.PieceDto> pieces = new ArrayList<>();
-        pieces.add(new GameSnapshotDto.PieceDto("Y1", "Yellow piece 1", "BASE"));
-        GameSnapshotDto.PlayerDto player = new GameSnapshotDto.PlayerDto("Yellow", 0, 4, pieces);
+        pieces.add(piece("Y1", GameSnapshotDto.PieceArea.BASE, -1, -1, "BASE"));
+        GameSnapshotDto.PlayerDto player = new GameSnapshotDto.PlayerDto("Yellow", 0, 4, 0, pieces);
 
         parameters.put("name", "Changed");
-        pieces.add(new GameSnapshotDto.PieceDto("Y2", "Yellow piece 2", "BASE"));
+        pieces.add(piece("Y2", GameSnapshotDto.PieceArea.BASE, -1, -1, "BASE"));
 
         assertEquals("Game One", request.parameters().get("name"));
         assertEquals(1, player.pieces().size());
@@ -206,7 +206,7 @@ class JsonLineCodecTest {
                 UnsupportedOperationException.class,
                 () ->
                         player.pieces()
-                                .add(new GameSnapshotDto.PieceDto("Y3", "Yellow piece 3", "BASE")));
+                                .add(piece("Y3", GameSnapshotDto.PieceArea.BASE, -1, -1, "BASE")));
     }
 
     @Test
@@ -241,11 +241,46 @@ class JsonLineCodecTest {
 
     private GameSnapshotDto snapshot() {
         GameSnapshotDto.PieceDto piece =
-                new GameSnapshotDto.PieceDto("Y1", "Yellow piece 1", "CELL_8");
+                piece("Y1", GameSnapshotDto.PieceArea.STANDARD_PATH, 8, -1, "CELL_8");
         GameSnapshotDto.PlayerDto player =
-                new GameSnapshotDto.PlayerDto("Yellow", 1, 3, List.of(piece));
+                new GameSnapshotDto.PlayerDto("Yellow", 1, 3, 0, List.of(piece));
         GameSnapshotDto.MysteryDto mystery = new GameSnapshotDto.MysteryDto(true, 20, 3);
         return new GameSnapshotDto(
-                SESSION_ID, 12, 4, SessionStatus.RUNNING, List.of(player), mystery);
+                SESSION_ID,
+                12,
+                4,
+                SessionStatus.RUNNING,
+                List.of(player),
+                mystery,
+                "Yellow",
+                7,
+                "Yellow moved Y1",
+                500,
+                4,
+                "Y1 moved to 8",
+                List.of(),
+                0);
+    }
+
+    private static GameSnapshotDto.PieceDto piece(
+            String id,
+            GameSnapshotDto.PieceArea area,
+            int standardPosition,
+            int homeStraightIndex,
+            String position) {
+        return new GameSnapshotDto.PieceDto(
+                id,
+                id,
+                "Yellow piece " + id.substring(1),
+                "Yellow",
+                area,
+                standardPosition,
+                homeStraightIndex,
+                "CLOCKWISE",
+                "NORMAL",
+                0,
+                false,
+                "",
+                position);
     }
 }

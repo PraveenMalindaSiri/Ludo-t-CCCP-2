@@ -19,6 +19,9 @@ import protocol.JsonLineCodec;
 import protocol.MessageKind;
 import protocol.ResponseMessage;
 import server.ServerConfig;
+import server.application.GameService;
+import server.application.port.GameRepository;
+import server.evidence.ServerCsvLogger;
 
 class ClientConnectionWriterTest {
 
@@ -26,17 +29,29 @@ class ClientConnectionWriterTest {
     void concurrentProducersCannotInterleaveSocketLines() throws Exception {
         JsonLineCodec codec = new JsonLineCodec();
         UUID clientId = UUID.randomUUID();
+        ServerConfig config =
+                new ServerConfig(
+                        "127.0.0.1",
+                        0,
+                        128,
+                        JsonLineCodec.DEFAULT_MAX_LINE_LENGTH,
+                        64,
+                        500,
+                        java.nio.file.Path.of("test-results"),
+                        4096,
+                        5000,
+                        false);
+        RequestDispatcher dispatcher =
+                new RequestDispatcher(
+                        new GameService(
+                                config, GameRepository.disabled(), ServerCsvLogger.disabled()));
         try (ServerSocket listener = new ServerSocket(0);
                 Socket receivingSocket = new Socket("127.0.0.1", listener.getLocalPort());
-                Socket serverSide = listener.accept()) {
+                Socket serverSide = listener.accept();
+                dispatcher) {
             receivingSocket.setSoTimeout(3_000);
             ClientConnection connection =
-                    new ClientConnection(
-                            serverSide,
-                            new ServerConfig(
-                                    "127.0.0.1", 0, 128, JsonLineCodec.DEFAULT_MAX_LINE_LENGTH),
-                            new RequestDispatcher(),
-                            () -> {});
+                    new ClientConnection(serverSide, config, dispatcher, () -> {});
             connection.start();
 
             int count = 80;
@@ -73,7 +88,7 @@ class ClientConnectionWriterTest {
                                                 Thread.currentThread().interrupt();
                                                 return;
                                             }
-                                            if (!connection.send(response)) {
+                                            if (!connection.offer(response)) {
                                                 allEnqueued.set(false);
                                             }
                                         });

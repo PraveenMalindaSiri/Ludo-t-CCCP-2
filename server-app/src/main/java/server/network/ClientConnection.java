@@ -97,11 +97,6 @@ public final class ClientConnection implements AutoCloseable, SessionSubscriber 
         return !closed.get();
     }
 
-    /** Compatibility alias retained for the Work 02 writer-queue test. */
-    public boolean send(Object message) {
-        return offer(message);
-    }
-
     void initiateServerShutdown() {
         enqueue(
                 new OutboundMessage(

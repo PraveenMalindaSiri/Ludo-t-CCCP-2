@@ -26,16 +26,6 @@ public final class GameService implements AutoCloseable {
     private final ServerCsvLogger evidence;
     private final AtomicBoolean stopping = new AtomicBoolean();
 
-    public GameService(ServerConfig config) {
-        this(
-                new SessionRegistry(config.sessionQueueCapacity(), config.defaultTurnDelayMillis()),
-                ServerCsvLogger.disabled());
-    }
-
-    public GameService(ServerConfig config, GameRepository repository) {
-        this(config, repository, ServerCsvLogger.disabled());
-    }
-
     public GameService(ServerConfig config, GameRepository repository, ServerCsvLogger evidence) {
         this(
                 new SessionRegistry(
@@ -45,10 +35,6 @@ public final class GameService implements AutoCloseable {
                         evidence,
                         config.shutdownDrainMillis()),
                 evidence);
-    }
-
-    public GameService(SessionRegistry registry) {
-        this(registry, ServerCsvLogger.disabled());
     }
 
     private GameService(SessionRegistry registry, ServerCsvLogger evidence) {

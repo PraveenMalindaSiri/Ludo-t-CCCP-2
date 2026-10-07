@@ -41,17 +41,9 @@ public final class BoardPreviewMain {
             List<GameSnapshotDto.PieceDto> pieces = new ArrayList<>();
             for (int pieceIndex = 0; pieceIndex < 4; pieceIndex++) {
                 String name = color.substring(0, 1) + (pieceIndex + 1);
-                String position =
-                        pieceIndex == 0
-                                ? "CELL_" + startingPosition(color)
-                                : pieceIndex == 1
-                                        ? "HOME_STRAIGHT_" + colorIndex
-                                        : pieceIndex == 2 ? "HOME" : "BASE";
-                pieces.add(
-                        new GameSnapshotDto.PieceDto(
-                                name, color + " piece " + (pieceIndex + 1), position));
+                pieces.add(piece(color, colorIndex, pieceIndex, name));
             }
-            players.add(new GameSnapshotDto.PlayerDto(color, 3, 1, pieces));
+            players.add(new GameSnapshotDto.PlayerDto(color, 3, 1, 1, pieces));
         }
         return new GameSnapshotDto(
                 UUID.randomUUID(),
@@ -62,7 +54,46 @@ public final class BoardPreviewMain {
                 new GameSnapshotDto.MysteryDto(true, 20, 3),
                 "Blue",
                 2,
-                "Blue moved B1");
+                "Blue moved B1",
+                500,
+                4,
+                "B1 moved",
+                List.of(),
+                0);
+    }
+
+    private static GameSnapshotDto.PieceDto piece(
+            String color, int colorIndex, int pieceIndex, String name) {
+        GameSnapshotDto.PieceArea area =
+                switch (pieceIndex) {
+                    case 0 -> GameSnapshotDto.PieceArea.STANDARD_PATH;
+                    case 1 -> GameSnapshotDto.PieceArea.HOME_STRAIGHT;
+                    case 2 -> GameSnapshotDto.PieceArea.HOME;
+                    default -> GameSnapshotDto.PieceArea.BASE;
+                };
+        int standardPosition = pieceIndex == 0 ? startingPosition(color) : -1;
+        int homeStraightIndex = pieceIndex == 1 ? colorIndex : -1;
+        String position =
+                switch (area) {
+                    case STANDARD_PATH -> "CELL_" + standardPosition;
+                    case HOME_STRAIGHT -> "HOME_STRAIGHT_" + homeStraightIndex;
+                    case HOME -> "HOME";
+                    case BASE -> "BASE";
+                };
+        return new GameSnapshotDto.PieceDto(
+                name,
+                name,
+                color + " piece " + (pieceIndex + 1),
+                color,
+                area,
+                standardPosition,
+                homeStraightIndex,
+                "CLOCKWISE",
+                "NORMAL",
+                0,
+                false,
+                "",
+                position);
     }
 
     private static int startingPosition(String color) {
