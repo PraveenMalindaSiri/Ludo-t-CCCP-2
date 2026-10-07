@@ -2,7 +2,6 @@ package testclient;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,7 +37,16 @@ public final class TestResultRecorder {
         if (previous != null) {
             throw new IllegalStateException("Duplicate generated request ID");
         }
-        pending.future().whenComplete((response, failure) -> complete(entry, response, failure));
+        pending.future()
+                .whenComplete(
+                        (response, failure) -> {
+                            try {
+                                complete(entry, response, failure);
+                                entry.recorded.complete(null);
+                            } catch (RuntimeException | Error recordingFailure) {
+                                entry.recorded.completeExceptionally(recordingFailure);
+                            }
+                        });
     }
 
     public void duplicateResponse(UUID requestId) {
@@ -47,13 +55,11 @@ public final class TestResultRecorder {
     }
 
     public void awaitAll(long timeoutMillis) throws Exception {
-        List<CompletableFuture<ResponseMessage>> futures =
-                entries.values().stream().map(entry -> entry.pending.future()).toList();
-        CompletableFuture<?>[] settled =
-                futures.stream()
-                        .map(future -> future.handle((value, failure) -> null))
+        CompletableFuture<?>[] recorded =
+                entries.values().stream()
+                        .map(entry -> entry.recorded)
                         .toArray(CompletableFuture[]::new);
-        CompletableFuture.allOf(settled).get(timeoutMillis, TimeUnit.MILLISECONDS);
+        CompletableFuture.allOf(recorded).get(timeoutMillis, TimeUnit.MILLISECONDS);
     }
 
     public Summary summary() {
@@ -120,6 +126,7 @@ public final class TestResultRecorder {
 
         private final PendingRequest pending;
         private final AtomicBoolean completed = new AtomicBoolean();
+        private final CompletableFuture<Void> recorded = new CompletableFuture<>();
 
         private Entry(PendingRequest pending) {
             this.pending = pending;
