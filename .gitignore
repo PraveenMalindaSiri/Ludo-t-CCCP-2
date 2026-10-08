@@ -78,15 +78,3 @@ Desktop.ini
 !/test-results/fixed-run-01/summary-A.csv
 !/test-results/fixed-run-01/summary-B.csv
 !/test-results/fixed-run-01/summary.csv
-
-# Keep deliberately preserved test reports, screenshots and complete rapid runs.
-!/test-results/preserved/
-/test-results/preserved/**
-!/test-results/preserved/**/
-!/test-results/preserved/**/*.csv
-!/test-results/preserved/**/*.txt
-!/test-results/preserved/**/*.xml
-!/test-results/preserved/**/*.png
-!/test-results/preserved/**/*.jpg
-!/test-results/preserved/**/*.jpeg
-!/test-results/preserved/**/*.pdf
