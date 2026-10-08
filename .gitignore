@@ -1,43 +1,92 @@
+# Maven and generated binaries
 target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
-.kotlin
+*.class
+*.jar
+*.war
+*.ear
 
-### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
-*.iws
+# Keep the complete Maven wrapper in Git.
+!/.mvn/
+!/.mvn/wrapper/
+!/.mvn/wrapper/maven-wrapper.properties
+!/.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
 *.iml
 *.ipr
-
-### Eclipse ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
-.vscode/
-.env
-*.local.properties
-test-results/
+*.iws
 docs/
 
-### Mac OS ###
+# Eclipse
+.classpath
+.project
+.settings/
+.factorypath
+.apt_generated/
+
+# Other local editor state
+.vscode/
+/nbproject/private/
+.nb-gradle/
+.kotlin/
+
+# Local secrets and machine-specific configuration
+.env
+.env.*
+!.env.example
+*.local.properties
+*.local.sql
+*.local.ps1
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.key
+*.pem
+
+# Runtime logs, crash dumps and temporary files
+*.log
+hs_err_pid*
+replay_pid*
+*.hprof
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# Operating-system metadata
 .DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local packaging output
+/dist/
+/submission/
+
+# Ignore runtime evidence by default.
+/test-results/*
+
+# Keep the selected six-file rapid run.
+!/test-results/fixed-run-01/
+/test-results/fixed-run-01/*
+!/test-results/fixed-run-01/client-A.csv
+!/test-results/fixed-run-01/client-B.csv
+!/test-results/fixed-run-01/server.csv
+!/test-results/fixed-run-01/summary-A.csv
+!/test-results/fixed-run-01/summary-B.csv
+!/test-results/fixed-run-01/summary.csv
+
+# Keep deliberately preserved test reports, screenshots and complete rapid runs.
+!/test-results/preserved/
+/test-results/preserved/**
+!/test-results/preserved/**/
+!/test-results/preserved/**/*.csv
+!/test-results/preserved/**/*.txt
+!/test-results/preserved/**/*.xml
+!/test-results/preserved/**/*.png
+!/test-results/preserved/**/*.jpg
+!/test-results/preserved/**/*.jpeg
+!/test-results/preserved/**/*.pdf

@@ -84,7 +84,7 @@ public class GameEngine {
     public void startGame() {
         initializeGame();
         while (advanceOneTurn()) {
-            // CLI mode intentionally continues until the game is complete.
+            // continues until the game is complete.
         }
     }
 
